@@ -1,0 +1,35 @@
+# Environments
+.venv/
+__pycache__/
+*.py[cod]
+
+# Model weights (fetched or trained, never committed)
+*.pt
+*.onnx
+weights/
+
+# Data: footage and derived frames stay local (see docs/ethics.md).
+# Hand annotations ARE committed - they are irreplaceable human effort and
+# contain no imagery. Generated ground truth is not: it is reproducible from
+# the seeded script.
+data/raw/**
+data/frames/**
+!data/**/.gitkeep
+!data/annotations/**
+# Must come after the negation above: later patterns win in gitignore.
+data/annotations/synthetic_*
+
+# Run outputs
+runs/**
+!runs/.gitkeep
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Dataset configs written by scripts/train_head_detector.py. They hardcode an
+# absolute path to wherever the dataset was unpacked, so they are generated
+# output rather than source - the script rewrites one on every run.
+configs/scut_head*.yaml

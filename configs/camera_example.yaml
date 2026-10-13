@@ -1,0 +1,71 @@
+# Template for a real camera position. Copy to configs/<site>.yaml per camera.
+#
+# Before this config means anything you need, in order:
+#   1. a calibration  - python tools/pick_points.py --mode calibration ...
+#   2. a region        - python tools/pick_points.py --mode region ...
+# Both write their output into the files referenced below.
+
+name: example_site
+
+calibration:
+  # Produced by tools/pick_points.py --mode calibration. Record in your logbook
+  # what you physically measured (paving stones, tape marks) and the
+  # reprojection error the tool printed.
+  file: configs/calibration_example.json
+
+  # Head-height correction. Leave this OUT while bootstrapping with full-body
+  # boxes (reference_point: box_bottom), because the feet are already on the
+  # calibrated plane. Add it to the calibration JSON once the head detector is
+  # in use, where the reference point sits ~1.7 m above the plane and projects
+  # long. See docs/limitations.md section 3 and docs/calibration.md section 5.
+  #
+  # height_correction:
+  #   nadir: [2.1, -3.4]        # ground point below the camera, world metres
+  #   camera_height_m: 6.0      # measured on site
+  #   object_height_m: 1.7      # assumed stature
+
+region:
+  name: bottleneck
+  # Image-space polygon. Keep it inside the calibrated quadrilateral:
+  # extrapolating a homography beyond the points it was fitted to is where
+  # area estimates go quietly wrong.
+  polygon: [[0, 0], [0, 0], [0, 0], [0, 0]]
+
+detector:
+  # Stage 1 bootstrap: pretrained COCO weights, person class only. Full-body
+  # boxes, so box_bottom lands on the ground plane where the homography is
+  # valid. Use this to prove the pipeline before training anything.
+  weights: yolov8n.pt
+  keep_classes: [0]
+  reference_point: box_bottom
+
+  # After training the head detector, switch to:
+  #   weights: runs/detect/heads/weights/best.pt
+  #   keep_classes: null
+  #   reference_point: centre
+  # and read docs/limitations.md on the head-height bias this introduces.
+
+  conf: 0.25
+  iou: 0.5
+  imgsz: 1280
+  device: null          # null = Ultralytics picks; "0" for the first GPU, "cpu" to force
+  track: true
+  tracker: bytetrack.yaml
+
+density:
+  window_s: 3.0         # ~3 s trailing mean, to suppress per-frame flicker
+
+pressure:
+  source: both          # tracks | flow | both (tracks, with a flow fallback)
+  lag_s: 0.3            # finite-difference lag for track velocities
+  max_speed_mps: 6.0    # above this, treat as an id switch and discard
+  k: 5                  # neighbours in the local-variance neighbourhood
+  radius_m: 2.0         # cap on neighbourhood radius
+  flow_step: 16         # optical-flow sampling stride in pixels
+  fallback_below_frac: 0.5   # switch to flow when fewer than this fraction of
+                             # in-region detections have usable velocities
+
+thresholds: configs/thresholds.yaml
+
+video:
+  fps_fallback: 25.0    # used only if the container does not report a frame rate

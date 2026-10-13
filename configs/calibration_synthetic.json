@@ -1,0 +1,5 @@
+{
+  "note": "Calibration for the synthetic clip. Geometry must match the constants in scripts/make_synthetic_clip.py. H is omitted on purpose so it is refitted from the points on load.",
+  "image_points": [[380.0, 640.0], [900.0, 640.0], [760.0, 360.0], [520.0, 360.0]],
+  "world_points": [[0.0, 0.0], [3.0, 0.0], [3.0, 2.0], [0.0, 2.0]]
+}

@@ -1,0 +1,75 @@
+# Level-of-service bands and the two-signal warning rule.
+#
+# ---------------------------------------------------------------------------
+# VERIFY BEFORE SUBMISSION
+# ---------------------------------------------------------------------------
+# The band edges below are Fruin's level-of-service classes for QUEUING /
+# WAITING areas, transcribed from secondary sources and converted from
+# square feet per person to people per square metre (1 ft^2 = 0.092903 m^2,
+# density = 1 / area_per_person).
+#
+#   LOS   area/person (ft^2)   area/person (m^2)   density (people/m^2)
+#   A     >= 13               >= 1.208            <= 0.83
+#   B     10 - 13             0.929 - 1.208       0.83 - 1.08
+#   C     7 - 10              0.650 - 0.929       1.08 - 1.54
+#   D     3 - 7               0.279 - 0.650       1.54 - 3.59
+#   E     2 - 3               0.186 - 0.279       3.59 - 5.38
+#   F     < 2                 < 0.186             > 5.38
+#
+# Check these against the primary source (Fruin, "Pedestrian Planning and
+# Design", 1971) or a citable transport-authority handbook before putting
+# them in the writeup, and record which edition and table you used in
+# docs/references.md. Do not cite this file.
+#
+# Note also that Fruin's QUEUING bands apply to standing/waiting crowds.
+# Fruin's WALKWAY bands are different and are expressed in flow terms. A
+# bottleneck is somewhere between the two cases; say which you chose and why.
+# ---------------------------------------------------------------------------
+
+source: "Fruin queuing LOS, converted to people/m^2 - SEE VERIFY NOTE ABOVE"
+
+los_bands:
+  - name: A
+    min_density: 0.0
+    max_density: 0.83
+    description: free circulation, no contact
+  - name: B
+    min_density: 0.83
+    max_density: 1.08
+    description: standing, personal comfort preserved
+  - name: C
+    min_density: 1.08
+    max_density: 1.54
+    description: restricted circulation, no bodily contact
+  - name: D
+    min_density: 1.54
+    max_density: 3.59
+    description: unavoidable contact, movement restricted
+  - name: E
+    min_density: 3.59
+    max_density: 5.38
+    description: standing contact throughout, movement only as a group
+  - name: F
+    min_density: 5.38
+    description: involuntary contact, shockwave propagation possible
+
+rule:
+  # Lowest band at which the density signal is satisfied.
+  escalate_from: D
+
+  # Pressure must rise faster than this for the pressure signal to hold.
+  # Units: (people/m^2)(m/s)^2 per second. This one number is NOT from the
+  # literature - it is scale-dependent and has to be set from the pressure
+  # series your own calibrated footage produces. Procedure in
+  # docs/calibration.md; record the value you chose and the data you chose it
+  # from.
+  pressure_slope_threshold: 0.02
+
+  # Least-squares window for the slope fit.
+  trend_window_s: 5.0
+
+  # Both signals must hold this long before WARNING is raised.
+  min_dwell_s: 2.0
+
+  # Conditions must be absent this long before standing down.
+  clear_s: 5.0

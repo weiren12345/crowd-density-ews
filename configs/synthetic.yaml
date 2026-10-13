@@ -1,0 +1,35 @@
+# End-to-end smoke configuration: no model, exact ground truth.
+#
+# Run:
+#   python scripts/make_synthetic_clip.py
+#   python scripts/run_pipeline.py --config configs/synthetic.yaml \
+#       --video data/raw/synthetic_bottleneck.mp4 --out runs/synthetic
+#
+# Proves stages 3-6 (calibration, density, turbulence, warning) in isolation
+# from detector error. Any wrong number here is our arithmetic.
+
+name: synthetic_bottleneck
+
+calibration:
+  file: configs/calibration_synthetic.json
+
+region:
+  name: corridor
+  # The calibrated rectangle itself: 3 m x 2 m = 6 m^2.
+  polygon: [[380, 640], [900, 640], [760, 360], [520, 360]]
+
+detector:
+  synthetic: data/annotations/synthetic_bottleneck_gt.json
+  reference_point: box_bottom
+  track: true
+
+density:
+  window_s: 3.0
+
+pressure:
+  source: tracks
+  lag_s: 0.3
+  k: 5
+  radius_m: 2.0
+
+thresholds: configs/thresholds.yaml

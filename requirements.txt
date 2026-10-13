@@ -1,0 +1,17 @@
+# Core pipeline
+numpy>=2.0
+opencv-python>=4.10
+PyYAML>=6.0
+scipy>=1.14
+
+# Detection + tracking. torch is installed separately so the CUDA build can be
+# chosen per machine: see README "Environment".
+ultralytics>=8.3
+lap>=0.5          # Hungarian assignment used by ByteTrack
+
+# Analysis / figures for the recall study
+matplotlib>=3.9
+pandas>=2.2
+
+# Tests
+pytest>=8.0
