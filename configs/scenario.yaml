@@ -1,0 +1,33 @@
+# SYNTHETIC calibrated scenario.
+#
+# Shows what the system would report given calibrated footage of a bottleneck
+# that fills faster than it empties. Geometry and movement are FABRICATED;
+# this is a demonstration of behaviour, not evidence about real crowds.
+#
+# Detection is replayed from ground truth, so this exercises calibration,
+# density, crowd pressure and the warning rule without detector error.
+
+name: scenario_bottleneck
+
+calibration:
+  file: configs/calibration_scenario.json
+
+region:
+  name: bottleneck
+  polygon: [[430, 660], [1010, 660], [835, 330], [605, 330]]
+
+detector:
+  synthetic: data/annotations/scenario_bottleneck_gt.json
+  reference_point: centre
+  track: true
+
+density:
+  window_s: 3.0
+
+pressure:
+  source: tracks
+  lag_s: 0.4
+  k: 5
+  radius_m: 2.0
+
+thresholds: configs/thresholds_scenario.yaml

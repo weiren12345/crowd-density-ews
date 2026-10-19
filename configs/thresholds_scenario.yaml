@@ -1,0 +1,50 @@
+# Thresholds for the SYNTHETIC calibrated scenario.
+#
+# Identical to configs/thresholds.yaml except for pressure_slope_threshold,
+# which is scale-dependent and must be set per site - see docs/calibration.md
+# section 6. This value was derived, not guessed:
+#
+#   Swept 0.002 to 0.015 against the criterion "lowest threshold producing
+#   zero warnings during the calm and ramp-up segment (t < 18 s) that still
+#   fires during the deterioration". Every value from 0.002 to 0.010 met it
+#   identically, first warning at t = 27.7 s; 0.015 never fired. 0.005 sits
+#   comfortably inside that range rather than at either edge.
+#
+# The default of 0.02 in configs/thresholds.yaml was a placeholder and is too
+# high for this scene. That is the expected behaviour of a scale-dependent
+# parameter, not a bug - it is why the procedure exists.
+#
+# The level-of-service bands below still carry the VERIFY note from
+# configs/thresholds.yaml: they have not been checked against a primary source.
+
+source: Fruin queuing LOS, converted to people/m^2 - SEE VERIFY NOTE ABOVE
+los_bands:
+- name: A
+  min_density: 0.0
+  max_density: 0.83
+  description: free circulation, no contact
+- name: B
+  min_density: 0.83
+  max_density: 1.08
+  description: standing, personal comfort preserved
+- name: C
+  min_density: 1.08
+  max_density: 1.54
+  description: restricted circulation, no bodily contact
+- name: D
+  min_density: 1.54
+  max_density: 3.59
+  description: unavoidable contact, movement restricted
+- name: E
+  min_density: 3.59
+  max_density: 5.38
+  description: standing contact throughout, movement only as a group
+- name: F
+  min_density: 5.38
+  description: involuntary contact, shockwave propagation possible
+rule:
+  escalate_from: D
+  pressure_slope_threshold: 0.005
+  trend_window_s: 5.0
+  min_dwell_s: 2.0
+  clear_s: 5.0

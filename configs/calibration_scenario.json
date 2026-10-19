@@ -1,0 +1,39 @@
+{
+  "note": "FABRICATED calibration for a synthetic scenario. On real footage these points come from measured ground features.",
+  "image_points": [
+    [
+      430.0,
+      660.0
+    ],
+    [
+      1010.0,
+      660.0
+    ],
+    [
+      835.0,
+      330.0
+    ],
+    [
+      605.0,
+      330.0
+    ]
+  ],
+  "world_points": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      6.0,
+      0.0
+    ],
+    [
+      6.0,
+      5.0
+    ],
+    [
+      0.0,
+      5.0
+    ]
+  ]
+}

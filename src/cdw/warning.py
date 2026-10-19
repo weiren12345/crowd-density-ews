@@ -199,6 +199,9 @@ class WarningRule:
             waited = (self._clear_since is not None) and (held == 0.0)
             return f"warning held during stand-down ({missing})" if waited else missing
         if level is WarningLevel.WATCH:
+            if p_sig:
+                return (f"density in LOS {band.name} and pressure rising, "
+                        f"holding {held:.1f}s of {self.min_dwell_s:.1f}s")
             return f"density in LOS {band.name}, pressure not rising"
         if p_sig and not d_sig:
             return f"pressure rising but density only LOS {band.name}"
