@@ -18,6 +18,7 @@ data/frames/**
 !data/annotations/**
 # Must come after the negation above: later patterns win in gitignore.
 data/annotations/synthetic_*
+data/annotations/scenario_*
 
 # Run outputs
 runs/**
