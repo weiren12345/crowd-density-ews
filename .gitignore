@@ -33,3 +33,4 @@ Thumbs.db
 # absolute path to wherever the dataset was unpacked, so they are generated
 # output rather than source - the script rewrites one on every run.
 configs/scut_head*.yaml
+configs/ht21*.yaml

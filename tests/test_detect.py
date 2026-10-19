@@ -160,3 +160,29 @@ def test_reset_restarts_numbering(sample_image):
     det.reset()
     ids = [d.track_id for d in det.track(sample_image) if d.track_id is not None]
     assert ids and min(ids) == 1
+
+
+# -- detection cap ----------------------------------------------------------
+
+
+@needs_model
+def test_max_det_is_raised_above_the_ultralytics_default():
+    """A 300-detection cap would masquerade as recall collapse.
+
+    Dense crowd frames can hold thousands of heads. If the cap bites, the
+    measured count ratio falls purely because of a library default, and the
+    conclusion drawn would be about the wrong thing entirely.
+    """
+    from cdw.detect import HeadDetector
+
+    det = HeadDetector(weights=str(WEIGHTS), conf=0.25, imgsz=640)
+    assert det.max_det > 300
+    assert det._common_kwargs()["max_det"] == det.max_det
+
+
+@needs_model
+def test_max_det_is_configurable():
+    from cdw.detect import HeadDetector
+
+    det = HeadDetector(weights=str(WEIGHTS), conf=0.25, imgsz=640, max_det=17)
+    assert det._common_kwargs()["max_det"] == 17

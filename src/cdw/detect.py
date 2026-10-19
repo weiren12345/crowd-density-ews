@@ -86,6 +86,7 @@ class HeadDetector:
         keep_classes: tuple[int, ...] | None = None,
         iou: float = 0.5,
         tracker: str = "bytetrack.yaml",
+        max_det: int = 3000,
     ):
         from ultralytics import YOLO  # imported lazily: heavy, and optional for tests
 
@@ -97,12 +98,17 @@ class HeadDetector:
         self.iou = iou
         self.tracker = tracker
         self.weights = weights
+        # Ultralytics defaults this to 300. A dense crowd frame can hold far
+        # more people than that, and the cap is silent: it would look exactly
+        # like recall collapsing, which is the one thing this project measures.
+        self.max_det = max_det
 
     def _common_kwargs(self) -> dict:
         kw = {
             "conf": self.conf,
             "iou": self.iou,
             "imgsz": self.imgsz,
+            "max_det": self.max_det,
             "verbose": False,
         }
         if self.device is not None:

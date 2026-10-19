@@ -61,34 +61,65 @@ def detect_layout(root: Path):
     )
 
 
-def write_data_yaml(root: Path, out: Path) -> Path:
-    train, val, test = detect_layout(root)
+def write_data_yaml(roots, out: Path) -> Path:
+    """Emit a data.yaml spanning one or more dataset roots.
 
-    # A labels/ dir must sit beside each images/ dir, or Ultralytics will train
-    # happily on zero annotations and report a meaningless mAP of 0.
-    for rel in (train, val):
-        labels = root / rel.replace("images", "labels")
-        if not labels.is_dir():
-            raise FileNotFoundError(f"missing labels directory {labels}")
+    Several roots are combined by listing their image directories rather than
+    copying anything: merging SCUT-HEAD Part A and Part B on disk would
+    duplicate hundreds of MB to achieve nothing.
+    """
+    import os
+
+    roots = [Path(r).resolve() for r in (roots if isinstance(roots, (list, tuple)) else [roots])]
+    trains, vals, tests = [], [], []
+
+    for root in roots:
+        train, val, test = detect_layout(root)
+        # A labels/ dir must sit beside each images/ dir, or Ultralytics trains
+        # happily on zero annotations and reports a meaningless mAP of 0.
+        for rel in (train, val):
+            labels = root / rel.replace("images", "labels")
+            if not labels.is_dir():
+                raise FileNotFoundError(f"missing labels directory {labels}")
+        trains.append(root / train)
+        vals.append(root / val)
+        if test:
+            tests.append(root / test)
+
+    base = Path(os.path.commonpath([str(r) for r in roots])) if len(roots) > 1 else roots[0]
+
+    def rel_to_base(paths):
+        out_paths = [str(p.relative_to(base)).replace("\\", "/") for p in paths]
+        return out_paths[0] if len(out_paths) == 1 else out_paths
 
     spec = {
-        "path": str(root.resolve()),
-        "train": train,
-        "val": val,
+        "path": str(base),
+        "train": rel_to_base(trains),
+        "val": rel_to_base(vals),
         "names": {0: "head"},
     }
-    if test:
-        spec["test"] = test
+    if tests:
+        spec["test"] = rel_to_base(tests)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(yaml.safe_dump(spec, sort_keys=False), encoding="utf-8")
-    print(f"layout: train={train}  val={val}  test={test or '(none)'}")
+    print(f"base: {base}")
+    print(f"train: {spec['train']}")
+    print(f"val:   {spec['val']}")
     return out
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", required=True, help="SCUT-HEAD root in YOLO layout")
+    ap.add_argument("--data", required=True, help="dataset root in YOLO layout")
+    ap.add_argument(
+        "--extra-data", default=None,
+        help="comma-separated additional dataset roots, combined by listing "
+             "their image directories rather than copying files. Use this to "
+             "add viewpoint diversity: a model trained only on front-facing "
+             "classroom heads does not detect the backs of heads, which is "
+             "most of what an elevated bottleneck camera sees.",
+    )
     ap.add_argument("--weights", default="yolov8s.pt",
                     help="starting weights; yolov8n for speed, yolov8s for recall")
     ap.add_argument("--epochs", type=int, default=60)
@@ -99,6 +130,12 @@ def main() -> int:
     ap.add_argument("--name", default="heads")
     ap.add_argument("--project", default="runs/detect")
     ap.add_argument("--patience", type=int, default=15)
+    ap.add_argument(
+        "--max-det", type=int, default=1000,
+        help="detection cap used during validation. Ultralytics defaults to "
+             "300; CroHD frames hold up to 344 annotated heads, so the default "
+             "would silently truncate predictions and understate recall.",
+    )
     ap.add_argument(
         "--workers", type=int, default=0,
         help="dataloader workers. On Windows each is a separate PROCESS that "
@@ -122,7 +159,10 @@ def main() -> int:
 
     from ultralytics import YOLO
 
-    data_yaml = write_data_yaml(Path(args.data), Path(args.data_yaml))
+    roots = [Path(args.data)]
+    if args.extra_data:
+        roots += [Path(r.strip()) for r in args.extra_data.split(",") if r.strip()]
+    data_yaml = write_data_yaml(roots, Path(args.data_yaml))
     print(f"wrote {data_yaml}")
 
     # Ultralytics joins a RELATIVE project path onto its own configured
@@ -151,9 +191,11 @@ def main() -> int:
         scale=0.3,
         close_mosaic=10 if args.mosaic else 0,
         workers=args.workers,
+        max_det=args.max_det,
     )
 
-    metrics = model.val(data=str(data_yaml), imgsz=args.imgsz, device=args.device)
+    metrics = model.val(data=str(data_yaml), imgsz=args.imgsz, device=args.device,
+                        max_det=args.max_det)
     print("\nvalidation:")
     try:
         print(f"  mAP50    {metrics.box.map50:.4f}")
