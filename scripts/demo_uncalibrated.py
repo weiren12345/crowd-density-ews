@@ -91,6 +91,16 @@ def main() -> int:
     ap.add_argument("--rate-threshold", type=float, default=0.3,
                     help="people/s above which occupancy counts as rising")
     ap.add_argument("--dwell-s", type=float, default=2.0)
+    ap.add_argument(
+        "--exit-frac", type=float, default=0.90,
+        help="hysteresis: having entered WATCH above the baseline, occupancy "
+             "must fall below baseline*exit_frac to leave it. Without a "
+             "deadband the level flaps every few frames whenever occupancy "
+             "sits on the threshold, which is unreadable and useless.",
+    )
+    ap.add_argument("--clear-s", type=float, default=3.0,
+                    help="how long the quieter condition must hold before "
+                         "de-escalating")
     ap.add_argument("--no-video", action="store_true")
     args = ap.parse_args()
 
@@ -144,6 +154,7 @@ def main() -> int:
     rows = []
     trace: deque[tuple[float, float]] = deque(maxlen=300)
     both_since = None
+    clear_since = None
     level = "NORMAL"
     fps = src_fps
 
@@ -189,21 +200,33 @@ def main() -> int:
         disorder = local_velocity_variance(pos, vel, k=5, radius_m=5.0) if len(vel) > 2 else 0.0
 
         ready = baseline.update(t, occ)
-        high = baseline.is_high(occ)
         rising = fs.net_rate > args.rate_threshold
-        both = ready and high and rising
-        if both:
-            both_since = t if both_since is None else both_since
+
+        # Hysteresis: a higher bar to enter a state than to stay in it. Without
+        # it the level oscillates whenever occupancy sits on the threshold.
+        if level in ("WATCH", "ELEVATED"):
+            high = baseline.is_high(occ * (1.0 / args.exit_frac))
         else:
-            both_since = None
+            high = baseline.is_high(occ)
+
+        both = ready and high and rising
+        both_since = (both_since or t) if both else None
         held = (t - both_since) if both_since is not None else 0.0
+
+        quiet = not (high and rising)
+        clear_since = (clear_since or t) if quiet else None
+        cleared = clear_since is not None and (t - clear_since) >= args.clear_s
 
         if not ready:
             level = "LEARNING"
+        elif level == "ELEVATED" and not cleared:
+            pass                                  # hold until the clear time
         elif both and held >= args.dwell_s:
             level = "ELEVATED"
         elif high:
             level = "WATCH"
+        elif level == "WATCH" and not cleared:
+            pass                                  # hold WATCH through a dip
         else:
             level = "NORMAL"
 

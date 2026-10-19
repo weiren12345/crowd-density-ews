@@ -154,6 +154,47 @@ No positive case exists on real footage because no public dataset contains one.
 
 Produced by `scripts/demo_uncalibrated.py`.
 
+## 6b. Escalation on REAL footage
+
+**Headline: on a sequence that actually has accumulation dynamics, the system
+escalates and de-escalates correctly - real model, real detections, real
+crowd.**
+
+The earlier demo on HT21-02 stayed NORMAL because that crowd is steady. HT21-03
+is a street crossing, where people accumulate at the light and then discharge:
+
+| sequence | occupancy sd | range/mean | max sustained accumulation |
+|---|---|---|---|
+| HT21-02 | 11.3 | 0.25 | +3.0/s |
+| **HT21-03** | **78.3** | **0.92** | **+17.3/s** |
+
+| time | transition | occupancy | inflow / outflow |
+|---|---|---|---|
+| 15.0 s | LEARNING -> NORMAL | 99 | 15.3 / 8.3 |
+| 15.1 s | -> WATCH | 104 | 15.3 / 8.4 |
+| 17.1 s | -> **ELEVATED** | 99 | 16.2 / 9.2 |
+| 29.8 s | -> NORMAL | 84 | 14.6 / 12.4 |
+
+The flow columns are the point: at escalation inflow is nearly double outflow,
+so the region is filling. At de-escalation they have converged. That is the
+flow-balance diagnostic behaving as designed, on real data, with no calibration
+and no borrowed thresholds.
+
+| file | what it is |
+|---|---|
+| `real_crossing_escalation.jpg` | one frame per state |
+| `real_crossing_summary.json` | settings and level counts |
+
+**Caveat on the baseline.** It is the 85th percentile of the first 15 s. If
+that window is unrepresentative the threshold is wrong - on HT21-02 it landed
+at 102 against a clip mean of 85, which is part of why that sequence never
+escalated. A longer or explicitly quiet learning window would be more robust.
+
+Hysteresis matters here: without a deadband the level flapped between NORMAL
+and WATCH every few frames while occupancy sat on the threshold. Entering
+requires crossing the baseline, leaving requires falling 10% below it plus a
+3 s clear time.
+
 ## 7. Synthetic calibrated scenario
 
 **Headline: given calibrated footage of a deteriorating crowd, the system
