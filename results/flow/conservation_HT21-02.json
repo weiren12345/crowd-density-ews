@@ -1,0 +1,13 @@
+{
+  "sequence": "HT21-02",
+  "region_frac": 0.6,
+  "ground_truth": {
+    "entries": 626,
+    "exits": 635,
+    "implied_change": -9,
+    "measured_change": -15,
+    "drift": 6,
+    "mean_occupancy": 93.29411764705883,
+    "drift_per_100_crossings": 0.47581284694686754
+  }
+}

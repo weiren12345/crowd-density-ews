@@ -1,0 +1,38 @@
+{
+  "HT21-01": {
+    "frames": 86,
+    "count_ratio": 0.8749417792268281,
+    "mean_true_count": 49.93023255813954,
+    "mean_true_speed_px_s": 53.84635294117646,
+    "mean_det_speed_px_s": 53.379294117647056,
+    "speed_rel_error": 0.04549327716771466,
+    "speed_correlation": 0.9388965687320037
+  },
+  "HT21-02": {
+    "frames": 120,
+    "count_ratio": 0.8861395783813272,
+    "mean_true_count": 213.85833333333332,
+    "mean_true_speed_px_s": 44.04428571428572,
+    "mean_det_speed_px_s": 44.436638655462176,
+    "speed_rel_error": 0.02768603792592253,
+    "speed_correlation": 0.9957801222634075
+  },
+  "HT21-03": {
+    "frames": 120,
+    "count_ratio": 0.799154071033153,
+    "mean_true_count": 267.95,
+    "mean_true_speed_px_s": 107.48336134453781,
+    "mean_det_speed_px_s": 107.21310924369747,
+    "speed_rel_error": 0.024056879626473356,
+    "speed_correlation": 0.9553009526182885
+  },
+  "HT21-04": {
+    "frames": 120,
+    "count_ratio": 0.8694440574056013,
+    "mean_true_count": 179.425,
+    "mean_true_speed_px_s": 49.581260504201666,
+    "mean_det_speed_px_s": 49.06873949579833,
+    "speed_rel_error": 0.04639357849011133,
+    "speed_correlation": 0.7223758850170847
+  }
+}

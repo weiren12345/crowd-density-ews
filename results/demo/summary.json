@@ -1,0 +1,18 @@
+{
+  "sequence": "HT21-02",
+  "frames": 3315,
+  "duration_s": 132.6,
+  "region_frac": 0.6,
+  "scene_baseline_occupancy": 102.0,
+  "occupancy": {
+    "mean": 85.05429864253394,
+    "min": 61.0,
+    "max": 110.0
+  },
+  "levels": {
+    "LEARNING": 375,
+    "NORMAL": 2940
+  },
+  "mode": "uncalibrated, scene-relative threshold",
+  "caveat": "flags departure from this camera's learned normal; it is not an absolute danger threshold and does not detect a crush"
+}

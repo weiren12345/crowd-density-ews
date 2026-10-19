@@ -1,0 +1,22 @@
+{
+  "sequence": "HT21-04",
+  "region_frac": 0.6,
+  "ground_truth": {
+    "entries": 124,
+    "exits": 180,
+    "implied_change": -56,
+    "measured_change": -18,
+    "drift": -38,
+    "mean_occupancy": 73.36777777777777,
+    "drift_per_100_crossings": -12.5
+  },
+  "pipeline": {
+    "entries": 144,
+    "exits": 209,
+    "implied_change": -65,
+    "measured_change": -33,
+    "drift": -32,
+    "mean_occupancy": 68.61888888888889,
+    "drift_per_100_crossings": -9.06515580736544
+  }
+}
