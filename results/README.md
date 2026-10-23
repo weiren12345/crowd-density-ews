@@ -7,6 +7,16 @@ numbers do not have to be reconstructed later.
 Large artefacts (model weights, per-frame CSVs, overlay video) stay in `runs/`,
 which is gitignored. Only summaries and figures live here.
 
+**Image credits.** The diagnostic figures here contain annotated frames from
+third-party datasets, reproduced for academic illustration of detector
+behaviour. `real_crossing_escalation.jpg`, `overlay_still.jpg` and
+`diagnosis_crohd_finds_them.jpg` are frames from **CroHD / HT21** (Sundararaman
+et al., CVPR 2021). `diagnosis_scuthead_misses_backs_of_heads.jpg` uses
+**SCUT-HEAD**. `databug_shanghaitech_2x_scaling.jpg` uses **ShanghaiTech Part A**
+(Zhang et al., CVPR 2016). All overlays, boxes and labels are ours; the
+underlying imagery remains the property of the respective dataset authors.
+Sources and terms: [docs/datasets.md](../docs/datasets.md).
+
 ---
 
 ## 1. Detector recall vs crowding
