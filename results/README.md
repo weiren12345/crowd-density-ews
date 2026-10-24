@@ -34,6 +34,17 @@ Identical evaluation for all three models: 482 ShanghaiTech Part A images,
 | 1200+ | 0.012 | 0.024 | **0.204** |
 | usable ceiling (ratio >= 0.8) | never | never | **200 heads/image** |
 
+![Count ratio against crowding for all three models, log-log](recall/three_way.png)
+
+All three curves on log-log axes. The CroHD model is not merely better - it is
+the only one that is ever usable, and the gap widens with density.
+
+![Part A against Part A plus B](recall/comparison_A_vs_AB.png)
+
+The viewpoint-diversity experiment on its own: adding SCUT-HEAD Part B roughly
+doubles the count ratio at every density, which is what first suggested the
+problem was the training distribution rather than the model.
+
 | file | what it is |
 |---|---|
 | `recall_scuthead_A.json` | Part A only, 15 epochs |
@@ -58,6 +69,21 @@ evaluation data.
 | `diagnosis_scuthead_misses_backs_of_heads.jpg` | SCUT-HEAD model: almost every detection is a forward-facing person. Trained on a classroom camera facing the students, it learned faces from an elevated-front angle, not heads from any angle |
 | `diagnosis_crohd_finds_them.jpg` | same two images, CroHD model: 15 -> 52 and 20 -> 63 detections |
 | `databug_shanghaitech_2x_scaling.jpg` | the Kaggle re-upload had been upscaled 2x without rescaling its point labels. Red is as-stored, green is x2. Used as-is, every result from that dataset would have been silently wrong |
+
+| SCUT-HEAD model | CroHD model |
+|---|---|
+| ![SCUT-HEAD model detects only forward-facing people](recall/diagnosis_scuthead_misses_backs_of_heads.jpg) | ![CroHD model detects heads from all angles](recall/diagnosis_crohd_finds_them.jpg) |
+
+Same two frames, same confidence threshold, same architecture. 15 -> 52 and
+20 -> 63 detections. On the left, almost every box is on a forward-facing
+person; the backs and tops of heads an elevated camera mostly sees are missed.
+
+![ShanghaiTech annotations stored at half scale](recall/databug_shanghaitech_2x_scaling.jpg)
+
+The data bug, found by checking `max_ann_x / width = 0.498` and then confirmed
+visually. Red points are the annotations as stored; green are the same points
+doubled. Every ground-truth head sat in the top-left quadrant, which would have
+looked exactly like catastrophic recall.
 
 ## 3. Measurement validated against ground truth
 
@@ -86,6 +112,17 @@ detections it cannot associate.
 | `validation.png` | pipeline speed vs ground-truth speed, and the first fundamental-diagram look |
 | `count_vs_truth_timeseries.png` | detected vs true count over 40 s |
 
+![Pipeline speed against ground-truth speed](validation/validation.png)
+
+Pipeline-measured speed against ground-truth speed, and the first look at the
+speed-density relationship.
+
+![Detected count against true count over 40 seconds](validation/count_vs_truth_timeseries.png)
+
+Detection-only counting against ground truth over 40 s of HT21-04. The two
+traces track closely enough that the residual is a bias, not noise - which is
+what makes it correctable.
+
 Produced by `scripts/analyse_crohd.py`.
 
 ## 4. Fundamental diagram
@@ -101,6 +138,12 @@ From 1.18M person-observations of ground-truth tracks.
 | HT21-03 | -0.0136 | 0.71 -> 0.52 m/s |
 | HT21-04 | -0.0063 | 0.35 -> 0.26 m/s |
 | HT21-01 | +0.0100 | inconclusive: sparsest scene, too little density range |
+
+![Speed against density, and flow against density, per scene](validation/fundamental_diagram.png)
+
+Speed falls as density rises in every scene with enough density range. Flow,
+however, rises monotonically and never turns over - so the critical density,
+which is the peak of that curve, is simply not present in this data.
 
 Produced by `scripts/fundamental_diagram.py`.
 
@@ -153,6 +196,11 @@ flow balance, and a scene-relative warning rule, uncalibrated.
 | `summary.json` | settings and level counts |
 | `overlay_still.jpg` | annotated frame with the live HUD |
 
+![Annotated frame with the live heads-up display](demo/overlay_still.jpg)
+
+The live HUD: head boxes, the monitored region, occupancy, inflow and outflow,
+and the current level.
+
 The system reports **NORMAL throughout** (89% of frames, remainder spent
 learning the baseline). That is the correct answer - HT21-02 is a steady-state
 crowd where nothing unusual happens - and it is a true negative worth
@@ -194,6 +242,11 @@ and no borrowed thresholds.
 |---|---|
 | `real_crossing_escalation.jpg` | one frame per state |
 | `real_crossing_summary.json` | settings and level counts |
+
+![Real footage escalating through NORMAL, WATCH and ELEVATED](demo/real_crossing_escalation.jpg)
+
+One frame per state on HT21-03. Note the inflow and outflow figures in the HUD:
+nearly 2:1 at escalation, converged by the time it stands down.
 
 **Caveat on the baseline.** It is the 85th percentile of the first 15 s. If
 that window is unrepresentative the threshold is wrong - on HT21-02 it landed
@@ -237,6 +290,13 @@ de-escalates instead of latching. A density-only rule would still be firing.
 |---|---|
 | `scenario_escalation.jpg` | one frame at each state |
 | `scenario_episodes.json` | the episode with start, end and peaks |
+
+![Fabricated scenario escalating through NORMAL, WATCH and WARNING](demo/scenario_escalation.jpg)
+
+One frame at each state, with density in people/m2 on the HUD because this clip
+is calibrated. The FABRICATED watermark is on every frame deliberately: this is
+the only place in the project where a full escalation can be shown, and it must
+never be mistaken for footage of a real crowd.
 
 **`pressure_slope_threshold` was derived, not guessed.** Swept 0.002-0.015
 against the criterion "lowest value producing zero warnings during the calm and
