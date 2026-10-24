@@ -133,9 +133,19 @@ python scripts/analyse_crohd.py --root /path/to/HT21 --weights runs/detect/heads
 python scripts/demo_uncalibrated.py --root /path/to/HT21 --sequence HT21-03 --weights runs/detect/heads_crohd/weights/best.pt --out runs/demo
 ```
 
-The trained model (6.3 MB) is attached to the GitHub release rather than
-committed, since it is reproducible from step 2 and binaries in git history are
-permanent. Put it at `runs/detect/heads_crohd/weights/best.pt`.
+The trained model is attached to the
+[v1.0 release](https://github.com/weiren12345/crowd-density-ews/releases/tag/v1.0)
+rather than committed, since it is reproducible from step 2 and binaries in git
+history are permanent. To skip training:
+
+```bash
+mkdir -p runs/detect/heads_crohd/weights
+curl -L -o runs/detect/heads_crohd/weights/best.pt \
+    https://github.com/weiren12345/crowd-density-ews/releases/download/v1.0/best.pt
+```
+
+The same release carries `scenario_bottleneck.mp4` if you would rather watch the
+fabricated escalation demonstration than generate it.
 
 ## Working with your own footage
 

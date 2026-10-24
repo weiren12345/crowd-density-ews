@@ -128,7 +128,18 @@ demo, the fundamental diagram and the flow/forecast study all take the same
 Not committed — `.pt` files are gitignored, because binaries in git history are
 permanent and these are reproducible from section 2.
 
-The trained CroHD model (`best.pt`, 6.3 MB) is attached to the repository's
-GitHub release instead, so the results can be reproduced without re-training.
-Drop it at `runs/detect/heads_crohd/weights/best.pt`, which is the path every
-script's example command expects.
+The trained CroHD model (`best.pt`, 6.3 MB) is attached to the
+[v1.0 release](https://github.com/weiren12345/crowd-density-ews/releases/tag/v1.0)
+instead, so the results can be reproduced without re-training:
+
+```bash
+mkdir -p runs/detect/heads_crohd/weights
+curl -L -o runs/detect/heads_crohd/weights/best.pt \
+    https://github.com/weiren12345/crowd-density-ews/releases/download/v1.0/best.pt
+```
+
+That path is the one every script's example command expects.
+
+The same release carries `scenario_bottleneck.mp4`, the watermarked fabricated
+escalation clip, for anyone who wants to watch the demonstration without
+running the generator.
