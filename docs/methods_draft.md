@@ -13,32 +13,30 @@ choices, and it leads naturally to the recommendations.
 
 ## 1. Data preparation
 
-Three datasets were used, each verified before use rather than trusted.
+Three datasets were used, each verified before use rather than trusted. They
+served different roles, and the distinction organises everything that follows:
+**one trained the delivered model, one was superseded and retained as a control,
+and one was never trained on at all.**
 
-**SCUT-HEAD** (Parts A and B) was obtained as a Roboflow export in YOLO format:
-Part A 1,100 train / 400 validation / 500 test; Part B 1,630 / 466 / 233. Part A
-is classroom surveillance from an elevated camera across three lecture rooms;
-Part B is internet-sourced photography. Labels were verified as normalised
-`class cx cy w h`, single class, with zero malformed rows across a 400-image
-sample. Median head width measured 17 px against a median image width of roughly
-1,070 px, which later determined the training resolution.
+### CroHD / HeadTracking21 — the dataset the delivered model was trained on
 
-**ShanghaiTech Part A** (482 images, 241,275 annotated heads, 33–3,138 people per
-image) provided point annotations for dense crowds. Verification found a defect
-that would have invalidated every result derived from it: the redistribution had
-**upscaled every image 2× without rescaling the point labels**. The maximum
-annotation x-coordinate sat at 0.498 of image width (median across all 1,198
-images in both parts), and overlaying the raw points showed them clustered in
-the top-left quadrant. The evaluation script now infers the scale factor per
-image and reports it rather than assuming 1.0.
+CroHD supplies dense crowds from elevated cameras as video with head boxes and
+track identities: four training sequences, 5,741 frames, **1,188,496 annotated
+heads** at 1920×1080 and 25 fps. It is the only accessible dataset matching
+deployment conditions on every axis that matters — viewpoint, density,
+annotation type and temporal continuity — and §2 sets out how the project
+arrived at it.
 
-**CroHD / HeadTracking21** supplied dense crowds from elevated cameras as video
-with head boxes and track identities: four training sequences, 5,741 frames,
-1,188,496 annotated heads at 1920×1080 and 25 fps. Test-sequence ground truth is
-withheld by the benchmark and its evaluation server is closed, so the four
-training sequences were re-split locally.
+Two properties distinguish it from the alternatives. The cameras are mounted
+above pedestrian traffic, so the annotated heads are predominantly backs and
+tops rather than faces, which is what a deployed camera sees. And because it is
+video with persistent identities, the same data supports both detection training
+and the velocity measurements the crowd-pressure signal depends on; no still-image
+dataset can do the second.
 
-Conversion from MOT to YOLO format made three decisions worth recording:
+Test-sequence ground truth is withheld by the benchmark and its evaluation server
+is closed, so the four training sequences were re-split locally. Conversion from
+MOT to YOLO format made three decisions worth recording:
 
 - **Scene-level holdout.** Sequences are held out whole. At 25 fps consecutive
   frames are near-duplicates, so a random frame split would place almost
@@ -54,6 +52,28 @@ Conversion from MOT to YOLO format made three decisions worth recording:
 
 Only retained frames were copied, since duplicating all 5,741 would have
 consumed several gigabytes for no benefit.
+
+### The two supporting datasets
+
+**SCUT-HEAD (Parts A and B) — the initial choice, superseded.** Obtained as a
+Roboflow export in YOLO format: Part A 1,100 train / 400 validation / 500 test;
+Part B 1,630 / 466 / 233. Part A is classroom surveillance from an elevated
+camera across three lecture rooms; Part B is internet-sourced photography.
+Labels were verified as normalised `class cx cy w h`, single class, with zero
+malformed rows across a 400-image sample. Median head width measured 17 px
+against a median image width of roughly 1,070 px, which set the training
+resolution for these runs. Why it was superseded is §2's subject; the models
+trained on it are retained deliberately, as the control that gives the final
+result its meaning.
+
+**ShanghaiTech Part A — evaluation only, never trained on.** 482 images,
+241,275 annotated heads, 33–3,138 people per image, annotated as points.
+Verification found a defect that would have invalidated every result derived
+from it: the redistribution had **upscaled every image 2× without rescaling the
+point labels**. The maximum annotation x-coordinate sat at 0.498 of image width
+(median across all 1,198 images in both parts), and overlaying the raw points
+showed them clustered in the top-left quadrant. The evaluation script now infers
+the scale factor per image and reports it rather than assuming 1.0.
 
 ### What was not available
 
@@ -72,37 +92,50 @@ the sections that follow.
 ## 2. Data strategy
 
 The strategy changed twice, each time in response to measurement rather than
-preference.
+preference, and converged on CroHD.
 
-**Initial choice: SCUT-HEAD Part A.** Selected because it is head-annotated
-(bodies are occluded in dense crowds, heads are not), captured from an elevated
-viewpoint resembling the intended deployment, and already in YOLO format.
+**The initial choice and its failure.** SCUT-HEAD Part A was selected because it
+is head-annotated (bodies are occluded in dense crowds, heads are not), elevated,
+and already in YOLO format. A detector trained on it reached mAP50 0.938 on its
+own validation split but recovered only 27% of people on ShanghaiTech.
+Inspecting *which* detections were missed — rather than the aggregate score —
+showed that almost every successful detection was a forward-facing person and
+virtually every back-of-head was missed. SCUT-HEAD's camera sits at the front of
+a classroom facing the students, so the model had learned **faces from an
+elevated-front angle, not heads from any angle**, while a camera above a
+pedestrian bottleneck sees mostly backs and tops of heads.
 
-**First failure, and its diagnosis.** A detector trained on Part A achieved mAP50
-0.938 on its own validation split but recovered only 27% of people when evaluated
-on ShanghaiTech. Inspecting *which* detections were missed — rather than the
-aggregate score — showed that almost every successful detection was a
-forward-facing person, and virtually every back-of-head was missed. SCUT-HEAD's
-camera sits at the front of a classroom facing the students, so the model had
-learned **faces from an elevated-front angle, not heads from any angle**. This
-matters directly: a camera above a pedestrian bottleneck sees mostly backs and
-tops of heads.
+**An intermediate step that confirmed the diagnosis.** Part B — internet-sourced
+and viewpoint-diverse — was added to training, reversing the original plan that
+had reserved it as a held-out domain; ShanghaiTech had meanwhile become the
+better held-out domain, being a genuinely different source never trained on.
+Recall roughly doubled at every density. That it improved established viewpoint
+diversity as the operative variable; that it remained unusable established that
+classroom photography could not supply enough of it. The conclusion was that the
+problem would not be solved by adding data of the same kind.
 
-**First adaptation: add Part B.** Part B is internet-sourced and
-viewpoint-diverse. This deliberately reversed the original plan, which had
-reserved Part B as a held-out domain; the evidence indicated it was worth more as
-training diversity, and ShanghaiTech had meanwhile become a better held-out
-domain — genuinely different source, never trained on. Recall roughly doubled at
-every density, but the problem was not solved.
+**The dataset that worked: CroHD.** Selection was made against the failure
+diagnosis rather than by convenience, requirement by requirement:
 
-**Second adaptation: CroHD.** Selected because it is the only accessible dataset
-matching deployment conditions on every axis: dense crowds, elevated cameras,
-head bounding boxes, track identities, and video rather than stills.
+| Requirement | Why it is necessary | SCUT-HEAD | CroHD |
+|---|---|---|---|
+| Heads, not bodies | bodies are occluded in dense crowds | yes | yes |
+| Camera above the crowd | determines whether faces or backs of heads are seen | partly — elevated but front-facing | **yes** |
+| Genuinely dense scenes | the regime of interest | no — tens per frame | **yes — hundreds** |
+| Box annotations | point labels cannot train a detector | yes | **yes** |
+| Video with identities | required for velocity and crowd pressure | no — stills | **yes** |
 
-**Division of roles.** ShanghaiTech was used for **evaluation only** — point
-annotations cannot train a box detector. This is a constraint worth stating,
-because dense-crowd data is abundant in point form and scarce in box form, which
-limits what any detection-based approach can learn.
+Only CroHD satisfies all five. The viewpoint row is the one that had been
+underweighted at the start: it had been treated as roughly satisfied by "elevated",
+when the operative question was what the camera *faces*. The density row matters
+almost as much, since 253,376 boxes across 1,187 images means the model sees
+heavily occluded, overlapping heads as the normal case rather than the exception.
+
+**A constraint worth stating.** ShanghaiTech could be used for evaluation only,
+because point annotations cannot train a box detector. Dense-crowd data is
+abundant in point form and scarce in box form, which limits what any
+detection-based approach can learn and is part of why CroHD is as close to
+unique as it is.
 
 ### The dataset that was actually wanted
 
@@ -161,6 +194,34 @@ truncated predictions and produced an apparent recall collapse that was in fact 
 library setting. The cap was raised and the behaviour covered by a regression
 test.
 
+### The delivered model
+
+The artefact the rest of the system is built on is a single YOLOv8n checkpoint
+fine-tuned on CroHD. Its configuration:
+
+| | |
+|---|---|
+| Initialisation | COCO-pretrained YOLOv8n |
+| Training data | CroHD, 1,187 images, 253,376 head boxes |
+| Classes | 1 (`head`) |
+| Resolution | 1280 |
+| Epochs | 10, batch 2 |
+| Augmentation | horizontal flip, ±30% scale; mosaic, rotation, shear and perspective disabled |
+| Parameters | 3,138,003 |
+| Inference | 30.8 ms/frame at `imgsz=1280` (RTX 3050 6 GB), against 143.4 ms on CPU |
+
+Two figures summarise what it achieved. On **held-out CroHD footage** it reaches
+precision 0.763 and recall 0.674 on a scene it never trained on. On
+**cross-domain ShanghaiTech images** it recovers 97.5% of people at 100–200 heads
+per image, against 26.9% for the Part A model and 42.1% for Part A+B — a 3.6×
+improvement over the first attempt, from changing the training distribution
+alone.
+
+The operating point is confidence 0.25 with the detection cap raised to 3,000,
+and this is the configuration used for every downstream result in the project:
+the measurement validation, the fundamental diagram, the flow study and the
+real-footage demonstration all run on this checkpoint.
+
 ### Why the learned component was kept deliberately small
 
 The architecture places one neural network at the front — reading pixels — and
@@ -196,13 +257,19 @@ planned 1,280 would have upscaled without adding information. CroHD is 1920×108
 with heads at 26–34 px, so `imgsz=1280` kept heads at 17–23 px after downscaling,
 above the stride-8 resolution limit.
 
-**Three training runs**, differing principally in training data:
+**Three training runs: the delivered model, and two controls that establish what
+it is being compared against.** They differ principally in training data.
 
-| Run | Data | Images | Boxes | Epochs | imgsz | batch |
-|---|---|---|---|---|---|---|
-| 1 | SCUT-HEAD A | 1,100 | ~30k | 15 | 1024 | 4 |
-| 2 | SCUT-HEAD A+B | 2,730 | ~45k | 10 | 1024 | 4 |
-| 3 | CroHD | 1,187 | 253,376 | 10 | 1280 | 2 |
+| Run | Data | Images | Boxes | Epochs | imgsz | batch | Role |
+|---|---|---|---|---|---|---|---|
+| 1 | SCUT-HEAD A | 1,100 | ~30k | 15 | 1024 | 4 | control |
+| 2 | SCUT-HEAD A+B | 2,730 | ~45k | 10 | 1024 | 4 | control |
+| **3** | **CroHD** | 1,187 | **253,376** | 10 | 1280 | 2 | **delivered** |
+
+The controls are retained rather than discarded because the delivered model's
+score is uninterpretable without them. "97.5% of people recovered" means nothing
+until it is set against what the obvious first choice of dataset produced on the
+same images.
 
 **The runs are not a clean ablation, and the claim is framed accordingly.**
 Resolution and batch size also differ, for the reasons above: resolution was
@@ -212,20 +279,29 @@ models were tested on the same 482 images at the same resolution and detection
 cap. The confound also runs against the winner: Run 3 trained at 1280 but was
 evaluated at 1024, below its training resolution, and still led by 3.6×.
 
-**Validation** used held-out splits, scene-level for CroHD. Run 3 achieved mAP50
-0.714, recall 0.674 and precision 0.763 on a scene it had never seen — lower than
-Run 1's in-domain 0.938, but measuring cross-scene generalisation rather than fit.
-Run 1's figure proved misleading, collapsing on contact with any other data.
+**Validation** used held-out splits, scene-level for CroHD. The delivered model
+achieved mAP50 0.714, recall 0.674 and precision 0.763 on a sequence it had never
+seen. Those figures are *lower* than Run 1's in-domain 0.938, and the comparison
+is instructive rather than unfavourable: each model was scored against its own
+validation set, and CroHD's — dense crowds of small heads — is far harder than
+SCUT-HEAD's classroom photographs. **A validation score is only meaningful
+relative to the difficulty of the set that produced it**, which is precisely why
+Run 1's 0.938 proved misleading, collapsing on contact with any other data.
 
 **Testing** was cross-domain and identical for all three models: 482 ShanghaiTech
-images at confidence 0.25.
+images at confidence 0.25, `imgsz=1024`, detection cap 4,000.
 
-| heads/image | Run 1 | Run 2 | Run 3 |
+| heads/image | SCUT-HEAD A | SCUT-HEAD A+B | **CroHD (delivered)** |
 |---|---|---|---|
 | 100–200 | 0.269 | 0.421 | **0.975** |
 | 200–400 | 0.180 | 0.288 | **0.740** |
 | 1200+ | 0.012 | 0.024 | **0.204** |
 | usable ceiling (ratio ≥ 0.8) | never | never | **200 heads/image** |
+
+The delivered model is the only one of the three that is ever usable: the
+controls never reach a count ratio of 0.8 at any density. The gap is widest where
+it matters most, and it is attributable to the training distribution, since the
+evaluation was held constant.
 
 **Metric choice.** Count ratio was used alongside mAP because density is a
 *count*: what matters is whether a person was found, not whether the box hugs
