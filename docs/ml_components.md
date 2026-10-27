@@ -61,13 +61,28 @@ cosine-style learning-rate schedule. Early stopping via `patience`.
 
 ### Three training runs, as a controlled experiment
 
-The single variable changed between runs is the training data.
+The runs differ principally in training data.
 
-| Run | Data | Images | Boxes | Epochs | imgsz |
-|---|---|---|---|---|---|
-| 1 | SCUT-HEAD Part A | 1,100 | ~30k | 15 | 1024 |
-| 2 | SCUT-HEAD A + B | 2,730 | ~45k | 10 | 1024 |
-| 3 | **CroHD** | 1,187 | **253,376** | 10 | 1280 |
+| Run | Data | Images | Boxes | Epochs | imgsz | batch |
+|---|---|---|---|---|---|---|
+| 1 | SCUT-HEAD Part A | 1,100 | ~30k | 15 | 1024 | 4 |
+| 2 | SCUT-HEAD A + B | 2,730 | ~45k | 10 | 1024 | 4 |
+| 3 | **CroHD** | 1,187 | **253,376** | 10 | 1280 | 2 |
+
+**Not a clean ablation, and worth saying so.** Resolution and batch size also
+differ. Both were forced rather than chosen: `imgsz` was matched to each
+dataset's native scale (SCUT-HEAD is ~1,070 px wide, so 1024 is approximately
+native; CroHD is 1920x1080, where 1280 keeps heads above the stride-8 limit),
+and batch size fell as instance counts rose because label-assignment memory
+scales with objects per image.
+
+What is controlled is the **evaluation**: all three models were scored on the
+same 482 ShanghaiTech images at `imgsz=1024` and `max_det=4000`, recorded in
+the result files. And the residual confound runs against the winner - Run 3
+trained at 1280 but was evaluated at 1024, below its own training resolution,
+and still led by 3.6x. The conclusion is about training recipes dominated by
+their data, which is weaker than a single-variable claim and is what the
+evidence supports.
 
 Result, measured identically on 482 held-out ShanghaiTech images:
 

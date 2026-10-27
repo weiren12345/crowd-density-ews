@@ -196,14 +196,21 @@ planned 1,280 would have upscaled without adding information. CroHD is 1920×108
 with heads at 26–34 px, so `imgsz=1280` kept heads at 17–23 px after downscaling,
 above the stride-8 resolution limit.
 
-**Three training runs, as a controlled comparison** with training data as the
-single variable:
+**Three training runs**, differing principally in training data:
 
-| Run | Data | Images | Boxes | Epochs | imgsz |
-|---|---|---|---|---|---|
-| 1 | SCUT-HEAD A | 1,100 | ~30k | 15 | 1024 |
-| 2 | SCUT-HEAD A+B | 2,730 | ~45k | 10 | 1024 |
-| 3 | CroHD | 1,187 | 253,376 | 10 | 1280 |
+| Run | Data | Images | Boxes | Epochs | imgsz | batch |
+|---|---|---|---|---|---|---|
+| 1 | SCUT-HEAD A | 1,100 | ~30k | 15 | 1024 | 4 |
+| 2 | SCUT-HEAD A+B | 2,730 | ~45k | 10 | 1024 | 4 |
+| 3 | CroHD | 1,187 | 253,376 | 10 | 1280 | 2 |
+
+**The runs are not a clean ablation, and the claim is framed accordingly.**
+Resolution and batch size also differ, for the reasons above: resolution was
+matched to each dataset's native scale, and batch size was forced down by memory
+as instance counts rose. What *is* controlled is the evaluation — all three
+models were tested on the same 482 images at the same resolution and detection
+cap. The confound also runs against the winner: Run 3 trained at 1280 but was
+evaluated at 1024, below its training resolution, and still led by 3.6×.
 
 **Validation** used held-out splits, scene-level for CroHD. Run 3 achieved mAP50
 0.714, recall 0.674 and precision 0.763 on a scene it had never seen — lower than
@@ -226,6 +233,21 @@ them to the pixel. mAP50-95 penalises imprecise corners heavily at 17 px object
 sizes, which is not the error this system is sensitive to. The limitation is
 stated: count ratio cannot distinguish "found everyone" from "missed fifty and
 invented fifty".
+
+**The usable ceiling is the project's defining limitation, and it is measured
+rather than assumed.** Counting is reliable to roughly 200 heads per frame;
+above that the ratio falls away, reaching 0.204 in the densest images. The
+direction of the error is what makes this serious. Because density is a count,
+missed detections do not produce a conspicuous failure — they produce a *lower*
+density reading, so the system reports a dangerously packed crowd as safer than
+it is. Degradation is therefore worst in precisely the regime the system exists
+to monitor, and any deployment must treat a measurement above the ceiling as
+unreliable rather than as a low number. The ceiling is now scale-limited rather
+than viewpoint-limited, which is an improvement on where the project started but
+not a solution. Evaluation breadth is a related constraint: the measurement
+validation rests on four CroHD scenes and one held-out sequence, which is enough
+to establish that the bias is consistent, not enough to establish that it is
+consistent everywhere.
 
 **Independent validation against ground truth.** Across four CroHD scenes,
 counting is biased low by a consistent **14% (sd 3.4 percentage points)** — a
