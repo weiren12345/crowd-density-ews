@@ -279,6 +279,43 @@ which produces high speed but **low local velocity variance** — precisely the
 quantity the crowd-pressure measure is designed to score as benign. Evaluating
 against it would have measured the wrong thing.
 
+### Two decision rules, and where their thresholds come from
+
+The absence of calibration in the available footage forced two decision rules
+rather than one, and they make different claims. The distinction matters for
+reading the results, because the two use **different level vocabularies**.
+
+| | calibrated rule | scene-relative rule |
+|---|---|---|
+| Implemented in | `src/cdw/warning.py` | `scripts/demo_uncalibrated.py` |
+| Levels | NORMAL / WATCH / **WARNING** | LEARNING / WATCH / **ELEVATED** |
+| Signals | density in a crowded Fruin band **and** crowd pressure rising | occupancy above this scene's own normal **and** net inflow positive |
+| Units | people/m² — absolute | people — relative to this camera |
+| Thresholds from | cited literature (Fruin) plus a swept parameter | the footage itself |
+| Claims | conditions resemble values documented before past flow breakdowns | conditions are unusual **for this camera** |
+
+The scene-relative threshold is computed, not chosen: the system records
+occupancy over an initial learning period and takes a high percentile of it. On
+HT21-03 that produced a threshold of **101 people**, from the 85th percentile of
+the first 15 s. ELEVATED then requires occupancy above 101 **and** a net rate
+above 0.3 people/s, sustained for 2 s.
+
+What is chosen rather than derived are the five parameters that produce it — the
+85th percentile, the 15 s learning window, the 0.3 people/s rate, and the 2 s
+dwell and 3 s clear times. The dwell and clear times are not arbitrary: without
+them the level oscillated nineteen times in eleven seconds, since occupancy sits
+on the threshold for extended periods.
+
+**ELEVATED is deliberately not called WARNING.** It is an anomaly signal. It
+needs no survey and no literature, and correspondingly it cannot state that a
+crowd is approaching danger in absolute terms — only that this scene is
+behaving unusually.
+
+Its weakness is the learning window. On HT21-02 the baseline landed at 102
+against a clip mean of 85: an unrepresentative quiet period set the bar too
+high, which is part of why that sequence never escalated. A longer or explicitly
+quiet learning period would be more robust.
+
 ### Two complementary demonstrations
 
 Because no real footage is both calibrated and deteriorating, two demonstrations
@@ -290,7 +327,8 @@ NORMAL to WATCH at 15.1 s and to ELEVATED at 17.1 s, then stood down at 29.8 s.
 The flow measurements show why: inflow of 16.2 people/s against outflow of 9.2 at
 escalation, converging to 14.6 against 12.4 at stand-down. This uses the trained
 model, real detections and real tracking, with no calibration and no borrowed
-thresholds.
+thresholds — ELEVATED carrying the scene-relative meaning set out above, not the
+absolute one.
 
 *Fabricated scenario.* A synthetic scenario was constructed with **declared**
 geometry (a 6.0 × 5.0 m region, recovered exactly by the homography) in which a
