@@ -1,12 +1,11 @@
 # Level-of-service bands and the two-signal warning rule.
 #
 # ---------------------------------------------------------------------------
-# VERIFY BEFORE SUBMISSION
+# PRIMARY SOURCE NOT YET CONSULTED
 # ---------------------------------------------------------------------------
 # The band edges below are Fruin's level-of-service classes for QUEUING /
-# WAITING areas, transcribed from secondary sources and converted from
-# square feet per person to people per square metre (1 ft^2 = 0.092903 m^2,
-# density = 1 / area_per_person).
+# WAITING areas, converted from square feet per person to people per square
+# metre (1 ft^2 = 0.092903 m^2, density = 1 / area_per_person).
 #
 #   LOS   area/person (ft^2)   area/person (m^2)   density (people/m^2)
 #   A     >= 13               >= 1.208            <= 0.83
@@ -16,17 +15,29 @@
 #   E     2 - 3               0.186 - 0.279       3.59 - 5.38
 #   F     < 2                 < 0.186             > 5.38
 #
-# Check these against the primary source (Fruin, "Pedestrian Planning and
-# Design", 1971) or a citable transport-authority handbook before putting
-# them in the writeup, and record which edition and table you used in
-# docs/references.md. Do not cite this file.
+# Cross-check performed 2026-10-30 against a secondary source that publishes
+# the queuing table in metric (movetos.com, a crowd-safety vendor). Its m^2
+# figures are the 2-decimal roundings of the ft^2 values above - 1.2, 0.93,
+# 0.65, 0.28, 0.19 - and its density column matches ours to rounding. It
+# differs only in rounding ORDER: it rounds to m^2 first and then takes the
+# reciprocal (0.19 -> 5.26), where this file converts exactly and reciprocates
+# last (2 ft^2 -> 0.185806 -> 5.38). Keep the values here; they are the more
+# faithful conversion.
+#
+# That check confirms the arithmetic and the ft^2 band edges. It is NOT a
+# verification of the source values, because both readings are secondary. The
+# primary source - Fruin, J. J. (1971), "Pedestrian Planning and Design",
+# Metropolitan Association of Urban Designers and Environmental Planners,
+# New York - has not been opened. Either consult it and record the table
+# number in docs/references.md, or state in the writeup that the bands are
+# adopted from secondary sources. Do not cite this file.
 #
 # Note also that Fruin's QUEUING bands apply to standing/waiting crowds.
 # Fruin's WALKWAY bands are different and are expressed in flow terms. A
 # bottleneck is somewhere between the two cases; say which you chose and why.
 # ---------------------------------------------------------------------------
 
-source: "Fruin queuing LOS, converted to people/m^2 - SEE VERIFY NOTE ABOVE"
+source: "Fruin queuing LOS, converted to people/m^2 - primary source not yet consulted, see note above"
 
 los_bands:
   - name: A

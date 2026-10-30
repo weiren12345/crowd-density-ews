@@ -1,10 +1,12 @@
 # References — TO BE VERIFIED
 
-> **Status: none of the entries below have been checked against a primary
-> source.** They were written from recollection to record what needs citing and
-> where each claim is used in the code. Before anything here goes in the
-> proposal, find the actual source, confirm the numbers and the wording, and
-> replace the entry with a full citation in your unit's required style.
+> **Status: no entry below has been checked against a primary source.** They
+> were written from recollection to record what needs citing and where each
+> claim is used in the code. The level-of-service bands have since been
+> cross-checked against two secondary sources (see below), which is weaker.
+> Before anything here goes in the proposal, find the actual source, confirm
+> the numbers and the wording, and replace the entry with a full citation in
+> your unit's required style.
 >
 > Do not cite this file, and do not cite source comments or
 > `configs/thresholds.yaml`. Cite the works themselves.
@@ -19,18 +21,49 @@ and converted to people/m² (1 ft² = 0.092903 m²). The conversion arithmetic i
 shown in the config header so it can be rechecked independently of the source
 values.
 
-To verify:
-- the primary source and its edition (commonly attributed to J. J. Fruin,
-  *Pedestrian Planning and Design*, 1971);
-- that you are reading the **queuing** table, not the **walkway** table — they
-  differ, and walkway LOS is expressed in flow terms;
-- each band edge in the original units;
-- whether a later standard (a transport authority handbook, or a national
-  standard on pedestrian facilities) is a more appropriate citation for an
-  engineering report than the 1971 original.
+**Citation to use:** Fruin, J. J. (1971). *Pedestrian Planning and Design*.
+Metropolitan Association of Urban Designers and Environmental Planners, New
+York. Table number still to be recorded.
 
-Also decide and justify which table applies. A bottleneck sits between a queue
-and a walkway; the writeup should say which you chose and why.
+**Cross-check, 2026-10-30.** Two secondary sources were consulted. Neither is
+citable in the report — both are commercial crowd-safety vendors — but the
+check is worth recording:
+
+- A vendor knowledge page (movetos.com) publishes the **queuing** table in
+  metric. Its density column matches `configs/thresholds.yaml` to rounding,
+  and its m² figures are the 2-decimal roundings of 13 / 10 / 7 / 3 / 2 ft²,
+  which independently supports the imperial band edges the config converts
+  from. It gives the full Fruin citation above. It also cites G. K. Still and
+  the HSE *Event Safety Guide*; see the leads below.
+- An earlier page (crowdmanagementindia.com) gave the **walkway** table
+  instead (LOS F > 2.17 people/m²) and contradicted itself, quoting ~5.4
+  people/m² for LOS F in a summary box while its own table said 2.17. It
+  appears to have conflated the two tables. Not used.
+
+**This is corroboration, not verification.** Both readings are secondary, and
+the 1971 book has not been opened. Until it is, the writeup must either cite a
+source someone has actually read or state that the bands are adopted from
+secondary sources.
+
+Still to do:
+- consult the primary source and record the edition and table number, **or**
+  state the adoption explicitly in the writeup;
+- confirm each band edge in the original units (ft² per person);
+- decide and justify which table applies. A bottleneck sits between a queue and
+  a walkway. The project uses the **queuing** table; the stated reason should be
+  that the escalation case is an accumulating, near-stationary crowd.
+
+**Better leads for a citable secondary source**, both named by the movetos page
+and both likely held by the university library:
+
+- Still, G. K. (2014). *Introduction to Crowd Science*. CRC Press. Still is a
+  recognised authority on crowd safety; a textbook a marker will accept.
+- Still, G. K. (2000). *Crowd Dynamics*. PhD thesis, University of Warwick.
+- Health and Safety Executive (1999). *The Event Safety Guide* ("Purple
+  Guide"). HSE Books. Quoted as giving a maximum of 2 people/m² for open event
+  areas — worth having, as a regulatory figure, but note that the Purple Guide
+  is now published by the Events Industry Forum rather than HSE, so check which
+  edition you are citing.
 
 ## Crowd pressure / turbulence
 
@@ -65,17 +98,25 @@ unstated deviation is not.
   pin it in `requirements.txt` once results are final. Behaviour changes
   between minor releases.
 
-## Dataset
+## Datasets
 
-**Used in:** training.
+**Used in:** training and evaluation. Three datasets, in different roles — see
+`docs/datasets.md` for provenance and the reproduction path.
 
-SCUT-HEAD, Part A (Part B held out as a separate domain).
+- **CroHD / HeadTracking21** — the delivered model's training data. Cite the
+  dataset paper (Sundararaman et al., *Tracking Pedestrian Heads in Dense
+  Crowd*, CVPR 2021); confirm the author list and venue.
+- **SCUT-HEAD, Parts A and B** — the two control models. Both parts are
+  *training* data; Part B was moved out of the held-out role early on (§2 of
+  the methods draft). Do not describe Part B as held out.
+- **ShanghaiTech Part A** — evaluation only, never trained on. Cite Zhang et
+  al., *Single-Image Crowd Counting via Multi-Column CNN*, CVPR 2016; confirm.
 
-To verify:
+To verify for each:
 - the dataset paper and the correct citation;
 - the licence, and whether it permits your use and any redistribution;
-- the exact train/val split you used, recorded in the repository so results are
-  reproducible.
+- the exact splits used. These are recorded in `results/README.md` and §4 of
+  the methods draft; keep the three accounts consistent.
 
 ## Optical flow
 

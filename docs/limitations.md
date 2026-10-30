@@ -118,12 +118,15 @@ picking one; the disagreement is itself a density-dependent measurement.
 ## 5. The thresholds are inherited, and one of them is not
 
 The level-of-service bands come from Fruin's queuing classes, converted to
-people/m² in `configs/thresholds.yaml`. They are cited, not invented — but see
-the VERIFY block at the top of that file: the values there were transcribed
-from secondary sources and **must be checked against the primary source** before
-submission. Fruin's queuing bands describe standing crowds; his walkway bands
-are different and flow-based. A bottleneck is between the two cases. Say which
-you chose and why.
+people/m² in `configs/thresholds.yaml`. They are cited, not invented, and the
+arithmetic has been cross-checked against a second secondary source that
+publishes the same table in metric — see the note at the top of that file and
+`docs/references.md`. But **the primary source has not been opened**, so the
+writeup must either cite one somebody has read or state that the bands are
+adopted from secondary sources. Fruin's queuing bands describe standing crowds;
+his walkway bands are different and flow-based. A bottleneck is between the two
+cases. The project uses the queuing table, on the grounds that the escalation
+case is an accumulating, near-stationary crowd — say so.
 
 `pressure_slope_threshold` is **not** from the literature. Crowd pressure is
 scale-dependent — it depends on the region size, the frame rate, the velocity

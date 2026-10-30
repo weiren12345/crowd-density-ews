@@ -334,8 +334,11 @@ consistent everywhere.
 **What could not be validated.** The detection and measurement layers were
 validated against ground truth, as above. **The warning layer could not be**,
 because no data contains the condition it is designed to recognise. Its
-thresholds are therefore inherited (Fruin level of service, still to be verified
-against a primary source) or derived per scene, rather than learned.
+thresholds are therefore inherited or derived per scene, rather than learned.
+The inherited ones are Fruin's level-of-service classes for **queuing** rather
+than walkway conditions, chosen because the escalation case is an accumulating,
+near-stationary crowd, and converted from ft² per person to people/m². They are
+adopted from secondary sources; the 1971 original has not been consulted.
 
 ---
 
