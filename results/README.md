@@ -62,6 +62,58 @@ confidence threshold suits all densities - sparse scenes want 0.3, extreme
 density wants 0.1 - and picking the best per bin would be selecting on the
 evaluation data.
 
+## 1b. Standard detection metrics
+
+**Headline: F1 0.720 for the delivered model against 0.107 for the first
+attempt, at the deployed operating point.**
+
+Count ratio says whether people were found; it says nothing about box quality,
+and it cannot be computed against box-annotated data. These are the
+conventional metrics, all three models scored identically on the held-out CroHD
+scene (100 images, 17,665 boxes) at imgsz 1280, IoU 0.5, max_det 3000.
+
+At conf 0.25, the threshold the pipeline runs at:
+
+| model | precision | recall | F1 | mAP50 | mAP50-95 |
+|---|---|---|---|---|---|
+| SCUT-HEAD A | 0.314 | 0.065 | 0.107 | 0.028 | 0.006 |
+| SCUT-HEAD A+B | 0.535 | 0.328 | 0.406 | 0.213 | 0.041 |
+| **CroHD** | **0.747** | **0.696** | **0.720** | **0.631** | **0.202** |
+
+At each model's own max-F1 confidence:
+
+| model | precision | recall | F1 | mAP50 |
+|---|---|---|---|---|
+| SCUT-HEAD A | 0.213 | 0.131 | 0.162 | 0.053 |
+| SCUT-HEAD A+B | 0.468 | 0.387 | 0.424 | 0.291 |
+| **CroHD** | 0.756 | 0.688 | **0.720** | 0.723 |
+
+**The Part A model finds 6.5% of heads.** That is what mAP50 0.938 on classroom
+photographs amounts to on real elevated footage. Adding Part B roughly
+quadruples F1 with no architectural change.
+
+**The delivered model is balanced** (precision 0.747, recall 0.696); both
+controls are lopsided toward precision, finding few heads and being moderately
+sure of those few. For a system whose output is a count, that is the wrong
+trade. Note also that conf 0.25 is near-optimal for the delivered model - its
+F1 is identical at both operating points - while the controls would do better
+at a lower threshold.
+
+| file | what it is |
+|---|---|
+| `detection/metrics.json` | both operating points, all three models, with settings |
+
+Produced by `scripts/eval_detection_metrics.py`.
+
+**Caveats.** The scored scene, HT21-04, is the CroHD model's *validation* set -
+its checkpoint was selected on it - so that row is an **upper bound**, not an
+independent result. For the two SCUT-HEAD models the same images are entirely
+unseen. This table is therefore sound evidence that the controls fail and only
+indicative for the delivered model; the unbiased three-way comparison is
+section 1, on ShanghaiTech, which no model trained on or was selected against.
+**Accuracy is not reported and is not applicable**: detection has no
+true-negative count, so the quantity is undefined.
+
 ## 2. The diagnosis
 
 | file | what it shows |

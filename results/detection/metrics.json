@@ -1,0 +1,57 @@
+{
+  "val_split": "C:\\Users\\User\\OneDrive\\Desktop\\engg2112\\crowd-density-ews\\configs\\ht21.yaml",
+  "imgsz": 1280,
+  "iou": 0.5,
+  "max_det": 3000,
+  "caveat": "the val split is the CroHD model's checkpoint-selection set, so its figures are an upper bound; for the SCUT-HEAD models these images are unseen",
+  "models": {
+    "SCUT-HEAD A": {
+      "max_f1": {
+        "precision": 0.2132,
+        "recall": 0.1308,
+        "f1": 0.1621,
+        "mAP50": 0.0526,
+        "mAP50_95": 0.0104
+      },
+      "conf_0.25": {
+        "precision": 0.3136,
+        "recall": 0.0646,
+        "f1": 0.1072,
+        "mAP50": 0.0277,
+        "mAP50_95": 0.0061
+      }
+    },
+    "SCUT-HEAD A+B": {
+      "max_f1": {
+        "precision": 0.4682,
+        "recall": 0.387,
+        "f1": 0.4238,
+        "mAP50": 0.2908,
+        "mAP50_95": 0.0544
+      },
+      "conf_0.25": {
+        "precision": 0.535,
+        "recall": 0.3277,
+        "f1": 0.4064,
+        "mAP50": 0.2127,
+        "mAP50_95": 0.0406
+      }
+    },
+    "CroHD": {
+      "max_f1": {
+        "precision": 0.7562,
+        "recall": 0.6877,
+        "f1": 0.7204,
+        "mAP50": 0.7227,
+        "mAP50_95": 0.2295
+      },
+      "conf_0.25": {
+        "precision": 0.7472,
+        "recall": 0.6955,
+        "f1": 0.7204,
+        "mAP50": 0.6311,
+        "mAP50_95": 0.2019
+      }
+    }
+  }
+}

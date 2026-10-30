@@ -282,20 +282,42 @@ models were tested on the same 482 images at the same resolution and detection
 cap. The confound also runs against the winner: Run 3 trained at 1280 but was
 evaluated at 1024, below its training resolution, and still led by 3.6×.
 
-**Validation** used a scene-level split: HT21-01, 02 and 03 train, HT21-04 is
-held out whole. The delivered model achieved mAP50 0.714, recall 0.674 and
-precision 0.763 on that held-out sequence. **This is a validation score, not a
-test score** — the training framework selects the retained checkpoint by
-performance on it, so it cannot also serve as an independent test. The
-independent test is the cross-domain evaluation below. Those figures are *lower* than Run 1's in-domain 0.938, and the comparison
-is instructive rather than unfavourable: each model was scored against its own
-validation set, and CroHD's — dense crowds of small heads — is far harder than
-SCUT-HEAD's classroom photographs. **A validation score is only meaningful
-relative to the difficulty of the set that produced it**, which is precisely why
-Run 1's 0.938 proved misleading, collapsing on contact with any other data.
+**The split, stated explicitly**, because the three roles are easy to conflate
+and the distinction governs what each number can be claimed to show:
 
-**Testing** was cross-domain and identical for all three models: 482 ShanghaiTech
-images at confidence 0.25, `imgsz=1024`, detection cap 4,000.
+| Role | Data | Size | Purpose |
+|---|---|---|---|
+| Train | HT21-01, 02, 03 | 1,187 images / 253,376 boxes | fits the weights |
+| Validation | HT21-04 (whole scene) | 100 images / 17,665 boxes | **selects the retained checkpoint** |
+| **Test** | **ShanghaiTech Part A** | **482 images / 241,275 points** | **independent evaluation** |
+
+The split is **scene-level**: sequences are held out whole, because at 25 fps a
+random frame split would place near-identical images on both sides and measure
+memorisation. HT21-04 is held out from training but not from model selection —
+the framework retains whichever epoch scores best on it — so a figure computed
+there is a validation score and an upper bound. ShanghaiTech is the only set
+that played no part in either fitting or selection, and is therefore the only
+genuine test.
+
+**Validation.** The delivered model reached mAP50 0.714, recall 0.674 and
+precision 0.763 on the held-out sequence. These are *lower* than Run 1's
+in-domain 0.938, and the comparison is instructive rather than unfavourable:
+each model was scored against its own validation set, and CroHD's — dense
+crowds of small heads — is far harder than SCUT-HEAD's classroom photographs.
+**A validation score is only meaningful relative to the difficulty of the set
+that produced it.**
+
+**Why in-domain testing was abandoned.** Run 1 was also evaluated on
+SCUT-HEAD's *own test split*, where it returned a count ratio of approximately
+0.95 at every density. A conventional train/validation/test discipline,
+correctly executed, therefore reported success — because all three splits share
+one camera and one viewpoint. The failure was invisible until the model met a
+different source. This is the single strongest argument in the project for
+**cross-domain evaluation**, and it is an argument about methodology rather
+than about this particular model.
+
+**Testing** was consequently cross-domain and identical for all three models:
+482 ShanghaiTech images at confidence 0.25, `imgsz=1024`, detection cap 4,000.
 
 | heads/image | SCUT-HEAD A | SCUT-HEAD A+B | **CroHD (delivered)** |
 |---|---|---|---|
@@ -308,6 +330,32 @@ The delivered model is the only one of the three that is ever usable: the
 controls never reach a count ratio of 0.8 at any density. The gap is widest where
 it matters most, and it is attributable to the training distribution, since the
 evaluation was held constant.
+
+**Detection metrics.** Count ratio measures whether people were found, not
+whether boxes were placed well, so the three models were additionally scored
+with standard detection metrics on the held-out CroHD scene — same images, same
+resolution, same detection cap, at the deployed confidence of 0.25:
+
+| model | precision | recall | F1 | mAP50 | mAP50-95 |
+|---|---|---|---|---|---|
+| SCUT-HEAD A | 0.314 | 0.065 | 0.107 | 0.028 | 0.006 |
+| SCUT-HEAD A+B | 0.535 | 0.328 | 0.406 | 0.213 | 0.041 |
+| **CroHD (delivered)** | **0.747** | **0.696** | **0.720** | **0.631** | **0.202** |
+
+Two features are worth drawing out. The Part A model recovers **6.5% of heads**,
+which is what mAP50 0.938 on classroom photographs amounts to on real elevated
+footage. And the delivered model's precision and recall are **balanced** (0.747
+against 0.696), where both controls are lopsided toward precision — they find
+few heads and are moderately confident about those few. For a system whose
+output is a count, that is the wrong trade.
+
+*Caveat on this table.* HT21-04 is the delivered model's validation scene, so
+its column is an upper bound rather than an independent result, while for the
+two SCUT-HEAD models the same images are fully unseen. The table is sound
+evidence that the controls fail and indicative for the delivered model; the
+unbiased three-way comparison remains the ShanghaiTech count ratio above, where
+no model held an advantage. Accuracy is not reported: object detection has no
+true-negative count, so the quantity is undefined.
 
 **Metric choice.** Count ratio was used alongside mAP because density is a
 *count*: what matters is whether a person was found, not whether the box hugs
