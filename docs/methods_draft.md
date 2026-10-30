@@ -210,11 +210,14 @@ fine-tuned on CroHD. Its configuration:
 | Parameters | 3,138,003 |
 | Inference | 30.8 ms/frame at `imgsz=1280` (RTX 3050 6 GB), against 143.4 ms on CPU |
 
-Two figures summarise what it achieved. On **held-out CroHD footage** it reaches
-precision 0.763 and recall 0.674 on a scene it never trained on. On
-**cross-domain ShanghaiTech images** it recovers 97.5% of people at 100–200 heads
-per image, against 26.9% for the Part A model and 42.1% for Part A+B — a 3.6×
-improvement over the first attempt, from changing the training distribution
+Two figures summarise what it achieved, and they answer different questions. On
+the **held-out CroHD sequence** it reaches precision 0.763 and recall 0.674 —
+a validation score, since the checkpoint was selected on it, and evidence that
+the model fits dense elevated footage. On **cross-domain ShanghaiTech images**,
+which it never trained on and which played no part in checkpoint selection, it
+recovers 97.5% of people at 100–200 heads per image, against 26.9% for the Part
+A model and 42.1% for Part A+B. That is the independent test, and a 3.6×
+improvement over the first attempt from changing the training distribution
 alone.
 
 The operating point is confidence 0.25 with the detection cap raised to 3,000,
@@ -279,9 +282,12 @@ models were tested on the same 482 images at the same resolution and detection
 cap. The confound also runs against the winner: Run 3 trained at 1280 but was
 evaluated at 1024, below its training resolution, and still led by 3.6×.
 
-**Validation** used held-out splits, scene-level for CroHD. The delivered model
-achieved mAP50 0.714, recall 0.674 and precision 0.763 on a sequence it had never
-seen. Those figures are *lower* than Run 1's in-domain 0.938, and the comparison
+**Validation** used a scene-level split: HT21-01, 02 and 03 train, HT21-04 is
+held out whole. The delivered model achieved mAP50 0.714, recall 0.674 and
+precision 0.763 on that held-out sequence. **This is a validation score, not a
+test score** — the training framework selects the retained checkpoint by
+performance on it, so it cannot also serve as an independent test. The
+independent test is the cross-domain evaluation below. Those figures are *lower* than Run 1's in-domain 0.938, and the comparison
 is instructive rather than unfavourable: each model was scored against its own
 validation set, and CroHD's — dense crowds of small heads — is far harder than
 SCUT-HEAD's classroom photographs. **A validation score is only meaningful
@@ -325,9 +331,14 @@ validation rests on four CroHD scenes and one held-out sequence, which is enough
 to establish that the bias is consistent, not enough to establish that it is
 consistent everywhere.
 
-**Independent validation against ground truth.** Across four CroHD scenes,
-counting is biased low by a consistent **14% (sd 3.4 percentage points)** — a
-stable bias is correctable, an erratic one is not — and track-derived speeds
+**Validation of the measurement stack against ground truth.** Across four CroHD
+scenes — **three of them training scenes and one held out**, so this measures
+agreement with ground truth rather than generalisation — counting is biased low
+by a consistent **14% (sd 3.4 percentage points)**. A stable bias is
+correctable, an erratic one is not. The held-out scene scores 0.869, above the
+four-scene mean of 0.857, while the lowest ratio (0.799) belongs to a scene the
+model did train on: scene difficulty dominates memorisation here, which is what
+makes the pooled figure quotable at all. Track-derived speeds
 match ground-truth pedestrian speeds to within **2–5%** (correlation up to
 0.996). Counting without tracking performs better still (0.977 ratio, 4% mean
 absolute error), establishing that detection should be used for counting and
@@ -427,6 +438,12 @@ escalation, converging to 14.6 against 12.4 at stand-down. This uses the trained
 model, real detections and real tracking, with no calibration and no borrowed
 thresholds — ELEVATED carrying the scene-relative meaning set out above, not the
 absolute one.
+
+One qualification belongs here rather than in a footnote: HT21-03 is a detector
+**training** scene. What this demonstration establishes is that the occupancy,
+flow-balance and escalation logic behave correctly on real crowd video — none
+of which was fitted to this scene — not that the detector generalises, which is
+evidenced separately and on different data in §4.
 
 *Fabricated scenario.* A synthetic scenario was constructed with **declared**
 geometry (a 6.0 × 5.0 m region, recovered exactly by the homography) in which a

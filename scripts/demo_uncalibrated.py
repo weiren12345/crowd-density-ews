@@ -1,8 +1,13 @@
 """Run the whole system on real crowd video, without calibration.
 
 Every component has been validated separately. This runs them together, end to
-end, on footage none of them trained on - which is the demonstration the
-project has been missing.
+end - the demonstration the project has been missing.
+
+Note on the footage: HT21-01, 02 and 03 are detector TRAINING scenes; only
+HT21-04 was held out. Running this on 02 or 03 therefore shows the measurement
+and escalation logic working, not detector generalisation - that is evidenced
+on ShanghaiTech, which the model never saw. Use --sequence HT21-04 for a run
+where the detector is also on unseen data.
 
 Uncalibrated, so the units differ from the calibrated pipeline:
 

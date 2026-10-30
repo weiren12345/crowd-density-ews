@@ -98,9 +98,15 @@ showing mostly backs and tops of heads.
 
 ### Evaluation methodology
 
-- **Scene-level holdout.** CroHD sequences are held out whole. At 25 fps a
-  random frame split would put near-identical images on both sides and report a
-  meaningless score.
+- **Scene-level holdout.** CroHD sequences are held out whole: HT21-01, 02 and
+  03 train, HT21-04 is held out. At 25 fps a random frame split would put
+  near-identical images on both sides and report a meaningless score.
+- **HT21-04 is a validation set, not a test set.** Ultralytics selects `best.pt`
+  by score on it, so mAP50 0.714 / P 0.763 / R 0.674 are model-selection
+  figures. The genuine held-out test is ShanghaiTech: a different dataset,
+  never trained on and never used to choose a checkpoint. The distinction is
+  worth keeping because the two tell different stories - the first says the
+  model fits dense elevated footage, the second says it transfers.
 - **Cross-domain testing.** Trained on one dataset, evaluated on another
   (ShanghaiTech), which is a far harder and more honest test than in-domain
   validation. Run 1's in-domain mAP50 of 0.938 collapsed to a 0.27 count ratio
@@ -109,7 +115,8 @@ showing mostly backs and tops of heads.
   point annotations for the counting task, because density is a count and what
   matters is whether a person was found, not whether the box hugs them.
 - **Validation against ground truth.** Counts to within 14% (sd 3.4pp across
-  four unrelated scenes); track-derived speeds to within 2-5%.
+  four CroHD scenes - three training, one held out, the held-out scene scoring
+  above the mean); track-derived speeds to within 2-5%.
 
 ---
 
@@ -162,7 +169,8 @@ Beyond the model itself, the project exercises:
 - **transfer learning** from a large pretrained backbone
 - **domain adaptation**, diagnosed from error analysis and fixed by changing the
   training distribution
-- **controlled ablation** - three runs, one variable
+- **controlled comparison** - three runs differing principally in data, with the
+  evaluation held constant (not a clean ablation; see section 1)
 - **train / validation / test discipline**, with scene-level rather than random
   splits
 - **cross-domain generalisation testing**

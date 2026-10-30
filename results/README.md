@@ -89,17 +89,27 @@ looked exactly like catastrophic recall.
 
 **Headline: counting is biased low by a consistent 14%; speeds are within 2-5%.**
 
-Four CroHD scenes, none of which the model trained on.
+Four CroHD scenes. **Three of them are training scenes and one is held out** -
+the conversion script holds out HT21-04 only - so this table measures
+*agreement with ground truth*, not generalisation. Read the HT21-04 row for
+that.
 
-| sequence | count ratio | speed error | speed correlation |
-|---|---|---|---|
-| HT21-01 | 0.875 | 4.5% | 0.939 |
-| HT21-02 | 0.886 | 2.8% | 0.996 |
-| HT21-03 | 0.799 | 2.4% | 0.955 |
-| HT21-04 | 0.869 | 4.6% | 0.722 |
+| sequence | split | count ratio | speed error | speed correlation |
+|---|---|---|---|---|
+| HT21-01 | train | 0.875 | 4.5% | 0.939 |
+| HT21-02 | train | 0.886 | 2.8% | 0.996 |
+| HT21-03 | train | 0.799 | 2.4% | 0.955 |
+| **HT21-04** | **held out** | **0.869** | **4.6%** | 0.722 |
 
 Count ratio across scenes: **mean 0.857, sd 0.034**. A consistent bias is
 correctable; an erratic one is not.
+
+**The held-out scene is not the worst one.** HT21-04 scores 0.869, above the
+four-scene mean, while the lowest ratio (0.799) belongs to HT21-03 - a scene
+the model *did* train on. Scene difficulty dominates memorisation here, which
+is the reason the bias is stable enough to be worth correcting. It is also the
+honest reason this table can be quoted at all: if the training scenes scored
+far better than the held-out one, the mean would be meaningless.
 
 Counting without tracking does better still: **0.977 count ratio, 4% mean
 absolute error** over 40 s of HT21-04 (`count_vs_truth_timeseries.png`). Use
@@ -161,15 +171,20 @@ better than assuming nothing changes.**
 
 Conservation check (occupancy change must equal entries minus exits):
 
-| sequence | drift per 100 crossings |
-|---|---|
-| HT21-02 | **+0.5** - crossing counts sound |
-| HT21-04 | **-12.5** - systematically biased outward |
+| sequence | ground-truth tracks | pipeline tracks |
+|---|---|---|
+| HT21-02 | +0.5 - crossing counts sound | +0.5 |
+| HT21-04 | **-12.5** | **-9.1** |
 
-The HT21-04 bias is structural: a person occluded inside the region is
-forgotten by the tracker, returns as a first sighting (no entry counted), then
-is counted leaving. Hence the net rate is taken from the occupancy trend, which
-has no such failure mode.
+Both HT21-04 figures are biased outward, and **they have different causes.**
+The pipeline's -9.1 is the expected tracker failure: a person occluded inside
+the region is forgotten, returns as a first sighting (no entry counted), then
+is counted leaving. The ground truth's -12.5 cannot be that, since no tracker
+of ours touches it - it is identity breaks in the annotations themselves,
+which is a useful reminder that hand-labelled tracks are not exact either.
+
+The design consequence is the same from either number: the net rate is taken
+from the occupancy trend, which has no such failure mode.
 
 Forecast skill against a persistence baseline, 2816 forecasts over 133 s:
 
@@ -248,6 +263,14 @@ and no borrowed thresholds.
 One frame per state on HT21-03. Note the inflow and outflow figures in the HUD:
 nearly 2:1 at escalation, converged by the time it stands down.
 
+**Caveat on the footage.** HT21-03 is a **training** scene for the detector, as
+is HT21-02 in section 6. Detection quality in both demonstrations is therefore
+optimistic relative to a new camera. This matters less than it first appears:
+what is being demonstrated is the occupancy, flow-balance and escalation logic,
+none of which was fitted to these scenes, and the detector's generalisation is
+evidenced separately in section 1 on a dataset it never saw. But the sentence
+"on footage the model never trained on" cannot be used of these two clips.
+
 **Caveat on the baseline.** It is the 85th percentile of the first 15 s. If
 that window is unrepresentative the threshold is wrong - on HT21-02 it landed
 at 102 against a clip mean of 85, which is part of why that sequence never
@@ -321,4 +344,8 @@ loop.
   so the warning layer has never been tested against the event it is named for
 - absolute density in people/m2 without a surveyed camera
 - that any threshold is correct. The Fruin bands remain unverified against a
-  primary source, and `pressure_slope_threshold` was never set
+  primary source, and `pressure_slope_threshold` was set by a sweep on the
+  **fabricated** scenario (section 7), never against real footage - because no
+  real footage available to this project contains the condition it is meant to
+  detect. It is a value derived under conditions we invented, not a measured
+  property of crowds.

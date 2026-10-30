@@ -31,38 +31,41 @@ look safer than a moderate one.** The failure is in the direction that matters,
 which is the worst possible direction for a warning system.
 
 This is a property of the measurement, not a bug to be fixed, and the project
-measures it explicitly:
+measures it explicitly.
 
-- `scripts/sample_frames.py` draws a density-stratified sample of frames.
-- `tools/count_heads.py` collects blind hand counts — no model output shown,
-  frames shuffled per annotator, time per frame recorded.
-- A second annotator repeats a subset, so annotation noise is quantified
-  rather than assumed away.
-- `scripts/eval_recall.py` plots detected/true against **true** density, sweeps
-  the confidence threshold, and reports inter-annotator agreement.
-
-The resulting curve defines a **usable ceiling**: the density above which the
+**How it was measured in the end.** `scripts/eval_point_recall.py` evaluates the
+detector against 482 ShanghaiTech images carrying 241,275 **existing** point
+annotations, binned by true heads per image. That gives a count ratio per
+density band and a **usable ceiling**: 200 heads per frame, above which the
 system's own numbers cannot be trusted. Report that ceiling as a headline
 result. A system that knows where it stops working is a better engineering
 outcome than one that claims it never does.
 
-Caveats on the measurement itself, all of which belong in the writeup:
+> **Note on an earlier plan.** This project originally intended to establish the
+> ceiling by **blind hand counting** — `scripts/sample_frames.py` for
+> density-stratified sampling, `tools/count_heads.py` for shuffled annotator
+> sessions with a second annotator on a subset for inter-annotator agreement,
+> and `scripts/eval_recall.py` to fit the curve and a debiasing correction. That
+> tooling exists and is tested, but **the study was never run**: the switch to
+> public point-annotated datasets supplied far more annotated heads than hand
+> counting could, and on dense crowds that nobody on the team had to count by
+> eye. Do not cite the hand-count protocol as something the project did. The
+> `results/` directory contains no hand-count data, and that is why.
+
+Caveats on the measurement as actually performed:
 
 - It is a **count ratio, not detection-level recall**. It does not check that a
-  detected head is the same head a human marked. For a density system that is
-  the right quantity; for a detection paper it would not be.
-- The strata are defined by the detector's own estimate, so which frames land
-  in which bin is itself biased by the thing under test. The x-axis of the
-  final plot is the hand count, which keeps the *curve* honest even though the
-  *sampling* is not neutral.
-- Hand counts in dense frames are themselves uncertain. The agreement numbers
-  bound that; do not quote a ratio to more precision than the agreement
-  supports.
-
-A debiasing correction (`fit_correction` in `scripts/eval_recall.py`) is fitted
-through the origin as `true ≈ a·detected + b·detected²`. It is a per-camera,
-per-detector calibration curve, not a law. Never extrapolate it past the
-densities actually annotated — doing so invents people.
+  detected head is the same head the annotation marked. For a density system
+  that is the right quantity; for a detection paper it would not be.
+- It cannot distinguish "found everyone" from "missed fifty and invented
+  fifty". Two errors in opposite directions cancel in a count.
+- The annotations are somebody else's and carry their own error. The
+  ShanghaiTech redistribution we obtained had its labels scaled wrongly by 2×,
+  which would have silently invalidated every number derived from it had it not
+  been caught (`results/recall/databug_shanghaitech_2x_scaling.jpg`).
+- No single confidence threshold suits all densities — sparse scenes favour
+  0.3, extreme density 0.1 — and choosing the best per bin would be selecting
+  on the evaluation data.
 
 ## 3. Head detections do not lie on the ground plane
 
@@ -147,17 +150,34 @@ SCUT-HEAD Part A is classroom surveillance: indoor, static, seated, regularly
 spaced subjects, consistent lighting. The elevated viewpoint transfers; almost
 nothing else does. Expect a further recall drop on real pedestrian footage *on
 top of* the density effect, and measure the two separately rather than
-reporting a single number. Keep Part B as a held-out domain — training on both
-leaves nothing to test generalisation with.
+reporting a single number.
 
 Validation mAP on SCUT-HEAD is evidence about SCUT-HEAD. It is not evidence
-about pedestrian bottlenecks.
+about pedestrian bottlenecks. This was demonstrated rather than assumed: mAP50
+0.938 in-domain, 0.269 count ratio on real elevated crowds.
+
+> **This section originally advised keeping Part B as a held-out domain, on the
+> grounds that training on both leaves nothing to test with.** That advice was
+> reversed by evidence. Part B is viewpoint-diverse, and viewpoint turned out to
+> be the operative variable, so it was worth more as training data than as a
+> test set — and ShanghaiTech had meanwhile become a stronger held-out domain,
+> being a genuinely different source. The underlying principle still holds:
+> never test on what you trained on. Only the choice of which dataset plays
+> which role changed.
 
 ## 8. Evaluation is on a handful of clips
 
-Whatever is concluded rests on a small number of scenes, one site and one
-camera. State the number of clips, their total duration, and how many distinct
-crowd episodes they contain. Resist generalising from a single afternoon.
+Whatever is concluded rests on a small number of scenes. Concretely: the
+measurement validation covers **four CroHD sequences** (three of them training
+scenes, one held out), the flow study two, and the end-to-end demonstrations
+two — 133 s and 40 s respectively. The cross-domain detector evaluation is
+broader, at 482 ShanghaiTech images, but those are stills from unknown cameras
+and support no claim about tracking, velocity or flow.
+
+That is enough to establish that the counting bias is consistent across the
+scenes tested. It is not enough to establish that it is consistent everywhere,
+and no result here should be generalised to a camera geometry or crowd type
+that does not appear in CroHD.
 
 ## 9. No validated dangerous footage
 

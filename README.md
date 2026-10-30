@@ -64,7 +64,8 @@ entirely. That is a training-distribution failure, not a capacity one: both
 models are the same 3.1M-parameter YOLOv8n.
 
 **The measurement stack is validated against ground truth.** Counts to within
-14% (sd 3.4 pp across four unrelated CroHD scenes); track-derived speeds to
+14% (sd 3.4 pp across four CroHD scenes, three training and one held out — the
+held-out scene scores 0.869, above the four-scene mean); track-derived speeds to
 within 2–5%; a declared 30.0 m² region recovered exactly by the homography.
 
 **It escalates on real footage.** On HT21-03, a street crossing where people
