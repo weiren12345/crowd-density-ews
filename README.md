@@ -159,14 +159,14 @@ python scripts/demo_uncalibrated.py --root /path/to/HT21 --sequence HT21-03 --we
 ```
 
 The trained model is attached to the
-[v1.0 release](https://github.com/weiren12345/crowd-density-ews/releases/tag/v1.0)
+[v1.0 release](https://github.com/weiren12345/ENGG2112-TUT06-62/releases/tag/v1.0)
 rather than committed, since it is reproducible from step 2 and binaries in git
 history are permanent. To skip training:
 
 ```bash
 mkdir -p runs/detect/heads_crohd/weights
 curl -L -o runs/detect/heads_crohd/weights/best.pt \
-    https://github.com/weiren12345/crowd-density-ews/releases/download/v1.0/best.pt
+    https://github.com/weiren12345/ENGG2112-TUT06-62/releases/download/v1.0/best.pt
 ```
 
 The same release carries `scenario_bottleneck.mp4` if you would rather watch the

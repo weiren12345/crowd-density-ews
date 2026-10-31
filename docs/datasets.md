@@ -129,13 +129,13 @@ Not committed — `.pt` files are gitignored, because binaries in git history ar
 permanent and these are reproducible from section 2.
 
 The trained CroHD model (`best.pt`, 6.3 MB) is attached to the
-[v1.0 release](https://github.com/weiren12345/crowd-density-ews/releases/tag/v1.0)
+[v1.0 release](https://github.com/weiren12345/ENGG2112-TUT06-62/releases/tag/v1.0)
 instead, so the results can be reproduced without re-training:
 
 ```bash
 mkdir -p runs/detect/heads_crohd/weights
 curl -L -o runs/detect/heads_crohd/weights/best.pt \
-    https://github.com/weiren12345/crowd-density-ews/releases/download/v1.0/best.pt
+    https://github.com/weiren12345/ENGG2112-TUT06-62/releases/download/v1.0/best.pt
 ```
 
 That path is the one every script's example command expects.
