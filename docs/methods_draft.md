@@ -357,7 +357,28 @@ qualification carries into the reading of the first: its sequence is a detector
 escalation logic behave correctly on real crowd video, not that the detector
 generalises (§4). What each produced is reported in the findings section.
 
-> Recommendations — what surveyed calibration and incident data would enable,
-> and the three candidate routes for training on them — are in
-> `docs/future_work.md`, which covers them far more fully than this section
-> should.
+### What calibration would have changed
+
+With a surveyed homography the two demonstrations would have been one. The same
+real-footage run would have reported people/m² rather than a raw occupancy
+count, Fruin's bands would have applied to it, and the scene-relative vocabulary
+would have been unnecessary — one pipeline and one set of levels instead of two.
+Whether that run would have reached WARNING cannot be answered, and the reason
+is instructive: the calibrated rule requires a Fruin band *and* rising pressure,
+and with no surveyed area for the region there is no way to convert a count of
+people into a density at all. What the pairing does establish is that both
+halves function — the detection, tracking and flow logic on real crowds, the
+calibrated decision logic on declared geometry — and that calibration is the
+missing join rather than a missing capability.
+
+The larger consequence is transferability. In pixels, every threshold belongs to
+one camera at one zoom, so a model fitted at one site means nothing at another.
+In physical units — people/m², m/s — measurements mean the same thing
+everywhere: data can be pooled across cameras, published thresholds become
+applicable at all, and validation carries between venues. This is why the
+calibrated path was kept in the system even though the available footage could
+not exercise it. Obtaining that calibration needs no disaster footage —
+instrumented experiments with consenting volunteers at controlled densities, or
+a venue operator already running calibrated CCTV, would supply it, and
+`docs/future_work.md` sets out the full argument and the three candidate routes
+for learning thresholds once such data exists.
