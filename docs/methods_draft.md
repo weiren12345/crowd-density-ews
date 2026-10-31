@@ -52,7 +52,7 @@ image width of roughly 1,070 px, which set the training resolution for these
 runs. Why it was superseded is §2's subject; the models trained on it are
 retained deliberately, as the control that gives the final result its meaning.
 
-**ShanghaiTech Part A — evaluation only, never trained on.** 482 images,
+**ShanghaiTech Part A — the test set, never trained on.** 482 images,
 241,275 heads annotated as points, 33–3,138 people per image. Verification
 found a defect that would have invalidated every result derived from it: the
 redistribution had **upscaled every image 2× without rescaling the point
@@ -113,10 +113,11 @@ what the camera *faces*. The density row matters almost as much: 253,376 boxes
 across 1,187 images means the model sees heavily occluded, overlapping heads as
 the normal case rather than the exception.
 
-ShanghaiTech could be used for evaluation only, because point annotations cannot
-train a box detector. Dense-crowd data is abundant in point form and scarce in
-box form, which limits what any detection-based approach can learn. What no
-candidate supplied was **surveyed calibration**, which gives physical units, and
+ShanghaiTech could never be training data, because point annotations cannot
+train a box detector — which is what made it available as the test set.
+Dense-crowd data is abundant in point form and scarce in box form, which limits
+what any detection-based approach can learn. What no candidate supplied was
+**surveyed calibration**, which gives physical units, and
 **deterioration episodes**, the condition to be detected. The two are separable:
 calibration is an engineering requirement any deployment would satisfy, while
 incident data is the genuinely hard problem. Both reappear in §5.
