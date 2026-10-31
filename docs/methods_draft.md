@@ -11,7 +11,9 @@ original work plan was followed or adapted. Every number traces to
 Three datasets were used, each verified before use rather than trusted. They
 served different roles, and the distinction organises what follows: **one
 trained the delivered model, one was superseded and retained as a control, and
-one was never trained on at all.**
+one was never trained on at all.** Two others, named in the original proposal,
+were examined and set aside; they are recorded below because the reason they
+failed is the same constraint that shaped the rest of the project.
 
 ### CroHD / HeadTracking21 — the training data for the delivered model
 
@@ -60,6 +62,42 @@ labels**. The maximum annotation x-coordinate sat at 0.498 of image width
 (median across all 1,198 images in both parts), and overlaying the raw points
 showed them clustered in the top-left quadrant. The evaluation script now infers
 the scale factor per image and reports it rather than assuming 1.0.
+
+### Considered in the proposal, not used
+
+Two further datasets were named in the original proposal and tested against the
+same requirements before being set aside. Both were proposed for the warning
+layer rather than for training, and both failed on the same axis.
+
+**UMN** — staged surveillance sequences of panic and rapid dispersal, three
+scenes across eleven segments. It was attractive because it is one of the few
+public datasets containing anything resembling a crowd emergency. Three things
+ruled it out. The behaviour is simulated: participants are instructed to flee,
+and each runs out of frame. The scenes are sparsely populated, so the density
+regime is wrong. And it carries no head annotations, so it can train nothing
+and cannot support even a count-ratio measurement. A fourth and more specific
+objection — that the UMN anomaly produces high speed but *low* velocity
+variance, which is precisely what the crowd-pressure signal is built to read as
+benign — is set out in §5, and is the reason the planned evaluation against it
+was abandoned rather than merely deprioritised.
+
+**PETS 2009** — real-world crowd flows, bottleneck navigation and evacuation
+from a multi-camera outdoor setup, with scenario subsets for density
+estimation, tracking and flow analysis. On paper this was the closest match to
+the deployment scenario of anything considered, and it is the **only candidate
+that supplies camera calibration**, published as Tsai model parameters per
+view. It was set aside on density and annotation type. The sequences hold tens
+of participants where the system targets hundreds, and the annotations are
+person positions and full-body boxes — several of the available sets produced
+by third parties for later workshops rather than by the dataset authors —
+rather than head boxes. Body boxes are the wrong target in dense crowds, which
+is the same reasoning §2 applies to SCUT-HEAD.
+
+PETS is worth naming explicitly rather than dropping, because it is the one
+case where the calibration gap discussed in §2 and §5 was solvable and the
+density gap was not. That is the trade the project could not escape: the
+datasets with physical units do not have the crowds, and the datasets with the
+crowds do not have physical units.
 
 ### What was not available
 
@@ -116,9 +154,12 @@ the normal case rather than the exception.
 ShanghaiTech could never be training data, because point annotations cannot
 train a box detector — which is what made it available as the test set.
 Dense-crowd data is abundant in point form and scarce in box form, which limits
-what any detection-based approach can learn. What no candidate supplied was
-**surveyed calibration**, which gives physical units, and
-**deterioration episodes**, the condition to be detected. The two are separable:
+what any detection-based approach can learn. Two further properties were wanted
+and not obtained. No candidate combined **surveyed calibration**, which gives
+physical units, with the density the system targets: PETS 2009 publishes camera
+calibration but holds tens of people per scene, while CroHD has the crowds and
+no calibration. And no candidate at any density contained **deterioration
+episodes**, the condition to be detected. The two gaps are separable:
 calibration is an engineering requirement any deployment would satisfy, while
 incident data is the genuinely hard problem. Both reappear in §5.
 

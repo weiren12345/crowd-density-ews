@@ -118,6 +118,35 @@ To verify for each:
 - the exact splits used. These are recorded in `results/README.md` and §4 of
   the methods draft; keep the three accounts consistent.
 
+### Considered and not used
+
+Named in the original proposal, described in §1 of the methods draft, never
+downloaded or run.
+
+- **UMN** ("Unusual Crowd Activity"). Cite Mehran, Oyama and Shah, *Abnormal
+  Crowd Behavior Detection Using Social Force Model*, CVPR 2009, pp. 935–942,
+  doi:10.1109/CVPR.2009.5206641 — confirm.
+- **PETS 2009.** Cite Ferryman and Shahrokni, *PETS2009: Dataset and
+  Challenge*, IEEE Int. Workshop on Performance Evaluation of Tracking and
+  Surveillance, 2009 — confirm author list and exact title.
+
+> **VERIFY — weaker provenance than the entries above.** Both dataset homepages
+> were dead when checked on 2026-10-31: the PETS host `cvg.reading.ac.uk` no
+> longer resolves, and `mha.cs.umn.edu` served a rejected certificate. The
+> descriptive details in §1 therefore come from **papers citing these datasets,
+> not from the dataset authors**. Specifically unconfirmed: UMN's scene and
+> segment counts (3 scenes / 11 segments / 7,740 frames) and its resolution
+> (sources disagree between 320×240 and 640×480 — the draft avoids quoting
+> either); and whether PETS's published annotation sets are official or
+> third-party, which the draft hedges. PETS's Tsai calibration is corroborated
+> by multiple independent papers, one of which also reports the calibration is
+> imperfect in joint-consistency terms and that the providers acknowledged
+> synchronisation problems — worth knowing if anyone proposes using it.
+>
+> If either dataset is going to be named in the submitted report, find a live
+> authoritative page or the dataset paper itself and confirm the details, or
+> cut the specifics and keep only the reasoning.
+
 ## Optical flow
 
 **Used in:** `src/cdw/turbulence.py`, the fallback motion signal.
