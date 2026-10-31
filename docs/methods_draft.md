@@ -247,8 +247,8 @@ each number can be claimed to show:
 | **Test** | **ShanghaiTech Part A** | **482 images / 241,275 points** | **independent evaluation** |
 
 The split is scene-level, for the reason given in §1. HT21-04 is held out from
-training but not from model selection - the framework keeps whichever epoch
-scores best on it - so any figure from it is an upper bound, not an independent
+training but not from model selection — the framework keeps whichever epoch
+scores best on it — so any figure from it is an upper bound, not an independent
 result. ShanghaiTech played no part in fitting or selection, and is the only
 genuine test.
 
@@ -266,7 +266,7 @@ because the delivered model's score is uninterpretable without them: a recovery
 figure means nothing until it is set against what the obvious first choice of
 dataset produced on the same images. The three runs differ in resolution and
 batch size as well as in training data, so this is a controlled comparison
-rather than a clean ablation - though the confound runs against the winner,
+rather than a clean ablation — though the confound runs against the winner,
 which was scored below its training resolution.
 
 Count ratio was used alongside mAP because density is a *count*: what matters is
@@ -285,27 +285,39 @@ and adopted from secondary sources.
 
 ## 5. Relationship to the original work plan
 
-The original plan was: fine-tune a head detector on SCUT-HEAD; film our own
-footage at a pedestrian bottleneck; calibrate with a homography from measured
-ground points; compute density in people/m2; and warn using Fruin thresholds.
+The original plan was simple: fine-tune a head detector on a crowd-crush
+dataset; obtain a test set with measured ground points; compute density in
+people/m²; and warn using Fruin's thresholds.
 
-Much of that was followed. The staged architecture, the head-detection approach,
-the homography-based calibration, the density and crowd-pressure formulation,
-and the two-signal warning rule were all implemented as planned and are tested.
-The separation of the learned component from the decision logic was maintained
-throughout.
+Three of those four were delivered: the detector, the density calculation and
+the two-signal warning rule, and a homography that turns measured ground points
+into metres. The first premise was not, and its failure propagated through
+everything else.
 
-Four things changed. *Own footage was not obtained*: ethics approval for filming
-identifiable people carries a lead time the schedule could not absorb - a risk
-the plan had flagged from the outset - so public datasets were substituted.
-*Absolute density was dropped for the real-footage path*, because people/m2
-requires a surveyed camera; without one the system reports occupancy and
+**No crowd-crush dataset was available.** Such footage exists but is not
+publicly released, for the legal and ethical reasons set out in §1, and nothing
+within the project's control would have changed that. The detector was trained
+on the nearest available proxy instead — first SCUT-HEAD, then CroHD once the
+first was shown to be the wrong one (§2) — and the system was redefined to
+detect conditions *associated with* flow breakdown rather than crushes
+themselves. That redefinition is the largest single departure from the plan.
+
+**No test set with measured ground points was obtained either.** Surveying a
+site ourselves carried an ethics-approval lead time the schedule could not
+absorb, and no public dataset combines surveyed calibration with the densities
+the system targets (§2). Without a homography fitted to real measurements every
+quantity stays in pixels. The real-footage path therefore reports occupancy and
 dimensionless motion statistics against thresholds learned from each scene's own
-baseline. *Part B moved from held-out to training data*, as described in S2.
-*The anomaly-detection evaluation on the UMN dataset was dropped*: the UMN
-anomaly is coordinated escape, which produces high speed but **low local
-velocity variance** - precisely the quantity the crowd-pressure measure is
-designed to score as benign - so it would have measured the wrong thing.
+baseline, while Fruin's bands — which need absolute density — can only be
+exercised on a clip whose geometry is declared. Hence two decision rules where
+the plan assumed one.
+
+Two smaller departures: SCUT-HEAD Part B moved from held-out domain to training
+data, viewpoint diversity being worth more there than as a test set (§2); and
+the planned UMN anomaly-detection evaluation was dropped, the UMN anomaly being
+coordinated escape, which produces high speed but **low local velocity
+variance** — precisely what the crowd-pressure measure is built to score as
+benign (§1).
 
 ### Two decision rules, and where their thresholds come from
 
@@ -317,36 +329,35 @@ different claims and use **different level vocabularies**:
 | Implemented in | `src/cdw/warning.py` | `scripts/demo_uncalibrated.py` |
 | Levels | NORMAL / WATCH / **WARNING** | LEARNING / WATCH / **ELEVATED** |
 | Signals | density in a crowded Fruin band **and** crowd pressure rising | occupancy above this scene's own normal **and** net inflow positive |
-| Units | people/m2 - absolute | people - relative to this camera |
+| Units | people/m² — absolute | people — relative to this camera |
 | Thresholds from | cited literature (Fruin) plus a swept parameter | the footage itself |
 | Claims | conditions resemble values documented before past flow breakdowns | conditions are unusual **for this camera** |
 
 The scene-relative threshold is computed rather than chosen: the system records
 occupancy over an initial learning period and takes a high percentile of it.
-What is chosen are the five parameters that produce it - the percentile, the
+What is chosen are the five parameters that produce it — the percentile, the
 length of the learning window, the net-rate threshold, and the dwell and clear
 times. The dwell and clear times are not arbitrary; without them the level flaps,
 because occupancy sits on the threshold for extended periods.
 
 ELEVATED is deliberately not called WARNING. It is an anomaly signal, needing no
 survey and no literature, and correspondingly it cannot state that a crowd is
-approaching danger in absolute terms - only that this scene is behaving
+approaching danger in absolute terms — only that this scene is behaving
 unusually. Its known weakness is the learning window, which assumes the opening
 period is representative of the scene.
 
 Because no real footage is both calibrated and deteriorating, the two rules were
-demonstrated separately. The scene-relative rule was run on CroHD footage using
-the trained detector, real detections and real tracking, with no calibration and
-no borrowed thresholds. The calibrated rule was run on a synthetic clip whose
-geometry is declared rather than surveyed and which is watermarked on every
-frame, with detection replayed from ground truth since the trained detector does
-not respond to synthetic imagery. One qualification carries into the reading of
-the first: its sequence is a detector **training** scene, so it establishes that
-the occupancy, flow-balance and escalation logic behave correctly on real crowd
-video, not that the detector generalises, which is evidenced separately in S4.
-What each demonstration produced is reported in the findings section.
+demonstrated separately. The scene-relative rule was run on CroHD footage, using
+the trained detector and real tracking with no calibration and no borrowed
+thresholds; the calibrated rule on a watermarked synthetic clip whose geometry
+is declared rather than surveyed, with detection replayed from ground truth
+since the trained detector does not respond to synthetic imagery. One
+qualification carries into the reading of the first: its sequence is a detector
+**training** scene, so it establishes that the occupancy, flow-balance and
+escalation logic behave correctly on real crowd video, not that the detector
+generalises (§4). What each produced is reported in the findings section.
 
-> Recommendations - what surveyed calibration and incident data would enable,
-> and the three candidate routes for training on them - are set out in
-> `docs/future_work.md`. They were cut from here because this section is about
-> the work plan, and because that document covers them far more fully.
+> Recommendations — what surveyed calibration and incident data would enable,
+> and the three candidate routes for training on them — are in
+> `docs/future_work.md`, which covers them far more fully than this section
+> should.
