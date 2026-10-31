@@ -164,19 +164,18 @@ incident data is the genuinely hard problem. Both reappear in §5.
 
 ## 3. Model development
 
-**Architecture.** YOLOv8n — a single-stage, anchor-free detector with a
-CSPDarknet backbone using C2f blocks, a PANet-style feature pyramid, and a
-decoupled head operating at strides 8, 16 and 32. 3,157,200 parameters
-pretrained; 3,138,003 after reduction to a single class.
+**Architecture.** YOLOv8n, the smallest model in the YOLOv8 family: 3,157,200
+parameters pretrained, 3,138,003 after reduction to a single class.
 
 **Transfer learning.** All runs initialise from COCO-pretrained weights, so the
-backbone begins with general visual features and need only specialise; a
+network begins with general visual features and need only specialise. A
 3M-parameter detector trained from scratch on ~1,200 images would not converge
 usefully.
 
 **Single-class formulation.** The classification head was reduced from 80
-classes to one (`head`). The system detects and localises only — it never
-identifies anyone, which is relevant to the ethics position.
+classes to one (`head`), so the model answers only "is this a head?". It detects
+and localises; it has no mechanism to identify anyone, which is relevant to the
+ethics position.
 
 **Model size.** YOLOv8s (11,166,560 parameters) was obtained as a larger
 alternative but proved unnecessary: the nano model reached a 0.975 count ratio
@@ -184,28 +183,24 @@ once the training data was appropriate. **The limiting factor was data, not
 capacity** — a result rather than an assumption.
 
 **Augmentation, chosen rather than defaulted.** Rotation, shear and perspective
-were disabled: heads are upright in an elevated view, so these transforms teach
-poses that never occur. Mosaic was disabled for two reasons — it composites four
-images into one canvas, roughly halving object scale, which with heads at 17 px
-median pushes them below what the stride-8 detection layer can resolve, and it
-allocates a (2·imgsz)² buffer per sample, which exhausted available memory.
-Horizontal flip and ±30% scaling were retained, both producing configurations
-that genuinely occur.
+were disabled, since heads are upright in an elevated view and these transforms
+teach poses that never occur. Mosaic — which tiles four images into one canvas —
+was disabled because it roughly halves object scale, pushing 17 px heads below
+what the network can resolve, and because its memory cost was prohibitive.
+Horizontal flip and ±30% scaling were kept, both producing configurations that
+genuinely occur.
 
-**Detection cap.** Ultralytics limits predictions to 300 per image by default.
-Evaluation images contain up to 3,138 annotated heads, so the default would have
-truncated predictions and produced an apparent recall collapse that was in fact
-a library setting. The cap was raised and the behaviour covered by a regression
-test.
+**Detection cap.** Ultralytics caps predictions at 300 per image by default.
+Evaluation images contain up to 3,138 heads, so the default silently truncated
+predictions and produced what looked like a recall collapse but was a library
+setting. The cap was raised and the behaviour covered by a regression test.
 
-**Scope of the learned component.** One network sits at the front, reading
-pixels; everything after it is deterministic — ground-plane projection, density,
-crowd pressure, the warning rule. This was deliberate, for accountability (an
-alarm prompts a human to act, and that human needs to see which measurement and
-which rule produced it, which a single network-emitted risk score cannot supply)
-and for data efficiency: expressing the problem in a few physically meaningful
-quantities means any future learning over them needs far less data than learning
-the same relationships from raw pixels. §5 returns to the second point.
+**Scope of the learned component.** One network reads pixels; everything after
+it — ground-plane projection, density, crowd pressure, the warning rule — is
+deterministic. This was deliberate. An alarm prompts a human to act, and that
+human needs to see which measurement and which rule produced it. It also costs
+less data, since learning over a few physical quantities needs far less of it
+than learning the same relationships from raw pixels; §5 returns to this.
 
 ### The delivered model
 
@@ -222,17 +217,14 @@ the same relationships from raw pixels. §5 returns to the second point.
 
 Two figures summarise what it achieved, and they answer different questions. On
 the **held-out CroHD sequence** it reaches precision 0.763 and recall 0.674 — a
-validation score, since the checkpoint was selected there, and evidence that the
-model fits dense elevated footage. On **cross-domain ShanghaiTech images**,
-which played no part in either training or checkpoint selection, it recovers
-97.5% of people at 100–200 heads per image, against 26.9% for the Part A model
-and 42.1% for Part A+B. That is the independent test, and a 3.6× improvement
-over the first attempt from changing the training distribution alone.
+validation score, since the checkpoint was selected there. On **ShanghaiTech**,
+which played no part in training or checkpoint selection, it recovers 97.5% of
+people at 100–200 heads per image, against 26.9% for the Part A model and 42.1%
+for Part A+B. That is the independent test: a 3.6× improvement from changing the
+training distribution alone.
 
-The operating point is confidence 0.25 with the detection cap raised to 3,000,
-and this is the configuration behind every downstream result: the measurement
-validation, the fundamental diagram, the flow study and the real-footage
-demonstration all run on this checkpoint.
+The operating point is confidence 0.25 with the detection cap at 3,000, and
+this is the configuration behind every downstream result in the project.
 
 ---
 
@@ -250,7 +242,7 @@ image rather than batch size alone.
 natively ~1,070 px wide, so `imgsz=1024` was used, where the originally planned
 1,280 would have upscaled without adding information. CroHD is 1920×1080 with
 heads at 26–34 px, so `imgsz=1280` kept heads at 17–23 px after downscaling,
-above the stride-8 resolution limit.
+above the smallest size the network can resolve.
 
 **Three runs: the delivered model and two controls.** They differ principally in
 training data.
