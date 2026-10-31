@@ -68,9 +68,12 @@ Three things this does that matter for the numbers:
 - **Scene-level holdout.** `--test-seq` holds out a whole sequence. At 25 fps a
   random frame split puts near-identical images on both sides of the split and
   reports a score that means nothing.
-- **Temporal subsampling.** `--stride 4` keeps every fourth frame. Consecutive
-  frames are near-duplicates; keeping all of them inflates the dataset without
-  adding information.
+- **Temporal subsampling.** `--stride 4` keeps every fourth frame of the
+  *training* sequences. Consecutive frames are near-duplicates; keeping all of
+  them inflates the dataset without adding information. The held-out scene uses
+  a separate `--test-stride`, which defaults to **10** — so HT21-04's 997 frames
+  become 100 images, not the 250 that stride 4 would give. If you reproduce this
+  and get 250, you passed `--test-stride 4`.
 - **Drops `conf=0` rows**, which in MOT format mark annotations to be ignored.
 
 Result: 1,187 images carrying **253,376** head boxes.

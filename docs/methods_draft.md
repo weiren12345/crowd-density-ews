@@ -34,8 +34,9 @@ Conversion from MOT to YOLO format made three decisions worth recording:
   frames are near-duplicates, so a random frame split would place almost
   identical images on both sides of the divide and report a score measuring
   memorisation rather than generalisation.
-- **Temporal subsampling.** Every fourth frame was retained, neighbouring frames
-  carrying almost no additional information. This yielded 1,187 training images
+- **Temporal subsampling.** Every fourth frame of the training sequences was
+  retained, and every tenth of the held-out scene, neighbouring frames carrying
+  almost no additional information. This yielded 1,187 training images
   containing 253,376 boxes, and 100 images from the held-out scene containing
   17,665.
 - **Ignore flags respected.** MOT rows with a confidence field of 0 mark entries
