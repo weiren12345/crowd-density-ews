@@ -232,43 +232,12 @@ this is the configuration behind every downstream result in the project.
 
 ## 4. Training, validation and testing
 
-Hardware constraints shaped the configuration, and the binding constraint
-was not the expected one: the GPU (6 GB) peaked at 2.4 GB, while **system RAM
-(7.6 GB) was the limit.** Dataloader workers were reduced to zero, since on
-Windows each worker is a separate process re-importing the CUDA runtime and even
-two exhausted the commit limit. Batch size fell from 8 to 4 and finally 2 as
-instance counts rose, because label-assignment memory scales with objects per
-image rather than batch size alone.
+`imgsz=1280` keeps CroHD's 26-34 px heads at 17-23 px after downscaling, above
+the smallest size the network can resolve; batch size fell from 8 to 2 as
+instance counts rose, limited by system RAM (7.6 GB) rather than the GPU.
 
-Resolution was matched to each dataset's native scale. SCUT-HEAD images are
-natively ~1,070 px wide, so `imgsz=1024` was used, where the originally planned
-1,280 would have upscaled without adding information. CroHD is 1920×1080 with
-heads at 26–34 px, so `imgsz=1280` kept heads at 17–23 px after downscaling,
-above the smallest size the network can resolve.
-
-Three runs were performed — the delivered model and two controls — differing
-principally in training data.
-
-| Run | Data | Images | Boxes | Epochs | imgsz | batch | Role |
-|---|---|---|---|---|---|---|---|
-| 1 | SCUT-HEAD A | 1,100 | ~30k | 15 | 1024 | 4 | control |
-| 2 | SCUT-HEAD A+B | 2,730 | ~45k | 10 | 1024 | 4 | control |
-| **3** | **CroHD** | 1,187 | **253,376** | 10 | 1280 | 2 | **delivered** |
-
-The controls are retained rather than discarded because the delivered model's
-score is uninterpretable without them: "97.5% of people recovered" means nothing
-until it is set against what the obvious first choice of dataset produced on the
-same images.
-
-The runs are not a clean ablation, and the claim is framed accordingly:
-resolution and batch size also differ, for the reasons above. What *is*
-controlled is the evaluation — all three models tested on the same 482 images at
-the same resolution and detection cap. The confound also runs against the
-winner: Run 3 trained at 1280 but was evaluated at 1024, below its training
-resolution, and still led by 3.6×.
-
-The split is stated explicitly below, because the three roles are easy to
-conflate and the distinction governs what each number can be claimed to show:
+The three roles below are easy to conflate, and the distinction governs what
+each number can be claimed to show:
 
 | Role | Data | Size | Purpose |
 |---|---|---|---|
@@ -276,45 +245,37 @@ conflate and the distinction governs what each number can be claimed to show:
 | Validation | HT21-04 (whole scene) | 100 images / 17,665 boxes | **selects the retained checkpoint** |
 | **Test** | **ShanghaiTech Part A** | **482 images / 241,275 points** | **independent evaluation** |
 
-HT21-04 is held out from training but not from model selection — the framework
-retains whichever epoch scores best on it — so any figure computed there is a
-validation score and an upper bound. ShanghaiTech played no part in either
-fitting or selection, and is therefore the only genuine test.
+HT21-04 is held out from training but not from model selection - the framework
+keeps whichever epoch scores best on it - so any figure from it is an upper
+bound, not an independent result. ShanghaiTech played no part in fitting or
+selection, and is the only genuine test. On validation the model reached mAP50
+0.714, recall 0.674 and precision 0.763.
 
-On validation, the delivered model reached mAP50 0.714, recall 0.674 and
-precision 0.763 on the held-out sequence — *lower* than Run 1's in-domain
-0.938, which is instructive rather than unfavourable: each model was scored
-against its own validation set, and CroHD's dense crowds of small heads are far
-harder than SCUT-HEAD's classroom photographs. **A validation score is only
-meaningful relative to the difficulty of the set that produced it.**
-
-In-domain testing was abandoned for a reason worth recording. Run 1 was also
-evaluated on SCUT-HEAD's *own test split*, where it returned a count ratio of
-approximately 0.95 at every density. A conventional train/validation/test
-discipline, correctly executed, therefore reported success — because all three
-splits share one camera and one viewpoint, so the failure stayed invisible until
-the model met a different source. This is the project's strongest argument for
-**cross-domain evaluation**, and it is an argument about methodology rather than
-about this particular model.
-
-Testing was consequently cross-domain and identical for all three models:
-482 ShanghaiTech images at confidence 0.25, `imgsz=1024`, detection cap 4,000.
+Testing was cross-domain by necessity. The Part A control scored about 0.95 on
+SCUT-HEAD's *own test split* at every density: a correctly executed
+train/validation/test discipline reported success on a model that was in fact
+unusable, because all three splits share one camera. The failure stayed
+invisible until the model met a different source. All three models were
+therefore scored identically on 482 ShanghaiTech images at confidence 0.25,
+`imgsz=1024`, detection cap 4,000.
 
 | heads/image | SCUT-HEAD A | SCUT-HEAD A+B | **CroHD (delivered)** |
 |---|---|---|---|
-| 100–200 | 0.269 | 0.421 | **0.975** |
-| 200–400 | 0.180 | 0.288 | **0.740** |
+| 100-200 | 0.269 | 0.421 | **0.975** |
+| 200-400 | 0.180 | 0.288 | **0.740** |
 | 1200+ | 0.012 | 0.024 | **0.204** |
-| usable ceiling (ratio ≥ 0.8) | never | never | **200 heads/image** |
+| usable ceiling (ratio >= 0.8) | never | never | **200 heads/image** |
 
-The delivered model is the only one of the three ever usable; the controls never
-reach a count ratio of 0.8 at any density. The gap is attributable to the
-training distribution, since the evaluation was held constant.
+The controls make the delivered figure interpretable: "97.5% recovered" means
+nothing until set against what the obvious first choice of dataset produced on
+the same images, and neither control is usable at any density. The runs differ
+in resolution and batch as well as data, so this is a controlled comparison
+rather than a clean ablation - though the confound runs against the winner,
+scored below its training resolution.
 
-Count ratio measures whether people were found, not whether boxes were placed
-well, so the three models were additionally scored with standard detection
-metrics on the held-out CroHD scene — same images, resolution and detection cap,
-at the deployed confidence of 0.25:
+Count ratio asks whether people were found, not whether boxes were placed well,
+so the models were also scored with standard detection metrics on the held-out
+CroHD scene:
 
 | model | precision | recall | F1 | mAP50 | mAP50-95 |
 |---|---|---|---|---|---|
@@ -322,56 +283,34 @@ at the deployed confidence of 0.25:
 | SCUT-HEAD A+B | 0.535 | 0.328 | 0.406 | 0.213 | 0.041 |
 | **CroHD (delivered)** | **0.747** | **0.696** | **0.720** | **0.631** | **0.202** |
 
-The Part A model recovers **6.5% of heads**, which is what mAP50 0.938 on
-classroom photographs amounts to on real elevated footage. The delivered model's
-precision and recall are also **balanced** (0.747 against 0.696) where both
-controls are lopsided toward precision — they find few heads and are moderately
-confident about those few, which for a system whose output is a count is the
-wrong trade. Two caveats: HT21-04 is the delivered model's validation scene, so
-its column is an upper bound rather than an independent result, while for the
-SCUT-HEAD models the same images are fully unseen, leaving the ShanghaiTech
-count ratio above as the unbiased three-way comparison; and accuracy is not
-reported, because object detection has no true-negative count and the quantity
-is undefined.
-
-Count ratio was used alongside mAP because density is a *count*: what matters is
-whether a person was found, not whether the box hugs them to the pixel, and
-mAP50-95 penalises imprecise corners heavily at 17 px object sizes. Its
-limitation is that a count cannot distinguish "found everyone" from "missed
-fifty and invented fifty".
+The delivered model's precision and recall are balanced, where both controls are
+lopsided toward precision - few heads found, moderate confidence in those few,
+the wrong trade when the output is a count. HT21-04 is its validation scene, so
+that column is an upper bound while for the controls these images are unseen.
+Accuracy is not reported: object detection has no true-negative count.
 
 The usable ceiling is the project's defining limitation, and it is measured
 rather than assumed. Counting is reliable to roughly 200 heads per frame, above
-which the ratio falls away to 0.204 in the densest images. The direction of the
-error is what makes this serious: because density is a count, missed detections
-produce a *lower* density reading rather than a conspicuous failure, so the
-system reports a dangerously packed crowd as safer than it is. Degradation is
-worst in precisely the regime the system exists to monitor, and any deployment
-must treat a measurement above the ceiling as unreliable rather than as a low
-number.
+which the ratio falls to 0.204. Because density is a count, missed detections
+lower the reading rather than failing visibly, so the system reports a
+dangerously packed crowd as safer than it is - worst in precisely the regime it
+exists to monitor.
 
-The measurement stack was validated against ground truth. Across four CroHD
-scenes — **three of them training scenes and one held out**, so this measures
-agreement with ground truth rather than generalisation — counting is biased low
-by a consistent **14% (sd 3.4 percentage points)**; a stable bias is
-correctable, an erratic one is not. The held-out scene scores 0.869, above the
-four-scene mean of 0.857, while the lowest ratio (0.799) belongs to a scene the
-model did train on, so scene difficulty dominates memorisation here.
-Track-derived speeds match ground-truth pedestrian speeds to within **2–5%**
-(correlation up to 0.996), and counting without tracking performs better still
-(0.977 ratio, 4% mean absolute error) — establishing that detection should be
-used for counting and tracking only for velocity, since the tracker discards
-detections it cannot associate. Four scenes establish that the bias is
-consistent, not that it is consistent everywhere.
+The measurement stack was validated across four CroHD scenes, three training and
+one held out, so this measures agreement with ground truth rather than
+generalisation. Counting is biased low by a consistent **14% (sd 3.4 percentage
+points)**; a stable bias is correctable, an erratic one is not. The
+held-out scene scores 0.869 against a four-scene mean of 0.857, the lowest
+(0.799) being a training scene, so difficulty dominates memorisation.
+Track-derived speeds match ground truth to within **2-5%**, and counting without
+tracking does better still (0.977), so detection should be used for counting and
+tracking only for velocity.
 
-The detection and measurement layers were validated against ground truth, as
-above. **The warning layer could not be**, because no data contains the
-condition it is designed to recognise. Its thresholds are therefore inherited or
-derived per scene, rather than learned. The inherited ones are Fruin's
-level-of-service classes for **queuing** rather than walkway conditions, chosen
-because the escalation case is an accumulating, near-stationary crowd, and
-converted from ft² per person to people/m². They are adopted from secondary
-sources; the 1971 original has not been consulted.
+The warning layer could not be validated, because no data contains the condition
+it is designed to recognise. Its thresholds are inherited or derived per scene:
+the inherited ones are Fruin's **queuing** classes, chosen over his walkway
+classes because the escalation case is an accumulating, near-stationary crowd,
+and adopted from secondary sources.
 
 ---
 
