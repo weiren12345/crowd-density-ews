@@ -44,21 +44,22 @@ Conversion from MOT to YOLO format made three decisions worth recording:
 
 ### The two supporting datasets
 
-**SCUT-HEAD (Parts A and B) — the initial choice, superseded.** A Roboflow
-export in YOLO format: Part A 1,100 train / 400 validation / 500 test; Part B
-1,630 / 466 / 233. Part A is classroom surveillance from an elevated camera
-across three lecture rooms; Part B is internet-sourced photography. Labels were
-verified as normalised `class cx cy w h`, single class, with zero malformed rows
-across a 400-image sample. Median head width measured 17 px against a median
-image width of roughly 1,070 px, which set the training resolution for these
-runs. Why it was superseded is §2's subject; the models trained on it are
-retained deliberately, as the control that gives the final result its meaning.
+SCUT-HEAD (Parts A and B) was the initial choice and was later superseded. It
+was obtained as a Roboflow export in YOLO format: Part A 1,100 train / 400
+validation / 500 test; Part B 1,630 / 466 / 233. Part A is classroom
+surveillance from an elevated camera across three lecture rooms; Part B is
+internet-sourced photography. Labels were verified as normalised
+`class cx cy w h`, single class, with zero malformed rows across a 400-image
+sample. Median head width measured 17 px against a median image width of roughly
+1,070 px, which set the training resolution for these runs. Why it was
+superseded is §2's subject; the models trained on it are retained deliberately,
+as the control that gives the final result its meaning.
 
-**ShanghaiTech Part A — the test set, never trained on.** 482 images,
-241,275 heads annotated as points, 33–3,138 people per image. Verification
-found a defect that would have invalidated every result derived from it: the
-redistribution had **upscaled every image 2× without rescaling the point
-labels**. The maximum annotation x-coordinate sat at 0.498 of image width
+ShanghaiTech Part A became the test set and was never trained on. It holds 482
+images and 241,275 heads annotated as points, at 33–3,138 people per image.
+Verification found a defect that would have invalidated every result derived
+from it: the redistribution had **upscaled every image 2× without rescaling the
+point labels**. The maximum annotation x-coordinate sat at 0.498 of image width
 (median across all 1,198 images in both parts), and overlaying the raw points
 showed them clustered in the top-left quadrant. The evaluation script now infers
 the scale factor per image and reports it rather than assuming 1.0.
@@ -69,29 +70,29 @@ Two further datasets were named in the original proposal and tested against the
 same requirements before being set aside. Both were proposed for the warning
 layer rather than for training, and both failed on the same axis.
 
-**UMN** — staged surveillance sequences of panic and rapid dispersal, three
+UMN offers staged surveillance sequences of panic and rapid dispersal, three
 scenes across eleven segments. It was attractive because it is one of the few
 public datasets containing anything resembling a crowd emergency. Three things
 ruled it out. The behaviour is simulated: participants are instructed to flee,
 and each runs out of frame. The scenes are sparsely populated, so the density
-regime is wrong. And it carries no head annotations, so it can train nothing
-and cannot support even a count-ratio measurement. A fourth and more specific
+regime is wrong. And it carries no head annotations, so it can train nothing and
+cannot support even a count-ratio measurement. A fourth and more specific
 objection — that the UMN anomaly produces high speed but *low* velocity
 variance, which is precisely what the crowd-pressure signal is built to read as
 benign — is set out in §5, and is the reason the planned evaluation against it
 was abandoned rather than merely deprioritised.
 
-**PETS 2009** — real-world crowd flows, bottleneck navigation and evacuation
-from a multi-camera outdoor setup, with scenario subsets for density
-estimation, tracking and flow analysis. On paper this was the closest match to
-the deployment scenario of anything considered, and it is the **only candidate
-that supplies camera calibration**, published as Tsai model parameters per
-view. It was set aside on density and annotation type. The sequences hold tens
-of participants where the system targets hundreds, and the annotations are
-person positions and full-body boxes — several of the available sets produced
-by third parties for later workshops rather than by the dataset authors —
-rather than head boxes. Body boxes are the wrong target in dense crowds, which
-is the same reasoning §2 applies to SCUT-HEAD.
+PETS 2009 offers real-world crowd flows, bottleneck navigation and evacuation
+from a multi-camera outdoor setup, with scenario subsets for density estimation,
+tracking and flow analysis. On paper this was the closest match to the
+deployment scenario of anything considered, and it is the **only candidate that
+supplies camera calibration**, published as Tsai model parameters per view. It
+was set aside on density and annotation type. The sequences hold tens of
+participants where the system targets hundreds, and the annotations are person
+positions and full-body boxes — several of the available sets produced by third
+parties for later workshops rather than by the dataset authors — rather than
+head boxes. Body boxes are the wrong target in dense crowds, which is the same
+reasoning §2 applies to SCUT-HEAD.
 
 PETS is worth naming explicitly rather than dropping, because it is the one
 case where the calibration gap discussed in §2 and §5 was solvable and the
@@ -115,24 +116,24 @@ and shapes every section that follows.
 The strategy changed twice, each time in response to measurement rather than
 preference, and converged on CroHD.
 
-**The initial choice and its failure.** SCUT-HEAD Part A was selected for being
-head-annotated, elevated, and already in YOLO format. A detector trained on it
-reached mAP50 0.938 on its own validation split and recovered 27% of people on
-ShanghaiTech. Inspecting *which* detections were missed showed why: almost every
-success was a forward-facing person, almost every back-of-head a miss.
-SCUT-HEAD's camera faces the students from the front of a classroom, so the
-model had learned **faces from an elevated-front angle, not heads from any
-angle**, where a camera above a bottleneck sees mostly backs and tops.
+SCUT-HEAD Part A was the initial choice, selected for being head-annotated,
+elevated, and already in YOLO format. A detector trained on it reached mAP50
+0.938 on its own validation split and recovered 27% of people on ShanghaiTech.
+Inspecting *which* detections were missed showed why: almost every success was a
+forward-facing person, almost every back-of-head a miss. SCUT-HEAD's camera
+faces the students from the front of a classroom, so the model had learned
+**faces from an elevated-front angle, not heads from any angle**, where a camera
+above a bottleneck sees mostly backs and tops.
 
-**Part B confirmed the diagnosis.** Adding it — internet-sourced and
+Part B confirmed the diagnosis. Adding it — internet-sourced and
 viewpoint-diverse — roughly doubled recall at every density, which identified
 viewpoint as the operative variable; that it remained unusable showed classroom
 photography could not supply enough of it. This reversed the plan that had
 reserved Part B as a held-out domain, ShanghaiTech having meanwhile become the
 better one.
 
-**The dataset that worked: CroHD.** Selection was made against the failure
-diagnosis rather than by convenience, requirement by requirement:
+CroHD was the dataset that worked, and the selection was made against the
+failure diagnosis rather than by convenience, requirement by requirement:
 
 | Requirement | Why it is necessary | SCUT-HEAD | CroHD |
 |---|---|---|---|
@@ -164,43 +165,44 @@ incident data is the genuinely hard problem. Both reappear in §5.
 
 ## 3. Model development
 
-**Architecture.** YOLOv8n, the smallest model in the YOLOv8 family: 3,157,200
+The architecture is YOLOv8n, the smallest model in the YOLOv8 family: 3,157,200
 parameters pretrained, 3,138,003 after reduction to a single class.
 
-**Transfer learning.** All runs initialise from COCO-pretrained weights, so the
-network begins with general visual features and need only specialise. A
-3M-parameter detector trained from scratch on ~1,200 images would not converge
-usefully.
+Transfer learning was used throughout. All runs initialise from COCO-pretrained
+weights, so the network begins with general visual features and need only
+specialise; a 3M-parameter detector trained from scratch on ~1,200 images would
+not converge usefully.
 
-**Single-class formulation.** The classification head was reduced from 80
-classes to one (`head`), so the model answers only "is this a head?". It detects
-and localises; it has no mechanism to identify anyone, which is relevant to the
-ethics position.
+The model uses a single-class formulation, the classification head having been
+reduced from 80 classes to one (`head`), so that it answers only "is this a
+head?". It detects and localises; it has no mechanism to identify anyone, which
+is relevant to the ethics position.
 
-**Model size.** YOLOv8s (11,166,560 parameters) was obtained as a larger
-alternative but proved unnecessary: the nano model reached a 0.975 count ratio
+A larger model was tried and proved unnecessary. YOLOv8s (11,166,560 parameters)
+was obtained as an alternative, but the nano model reached a 0.975 count ratio
 once the training data was appropriate. **The limiting factor was data, not
 capacity** — a result rather than an assumption.
 
-**Augmentation, chosen rather than defaulted.** Rotation, shear and perspective
-were disabled, since heads are upright in an elevated view and these transforms
-teach poses that never occur. Mosaic — which tiles four images into one canvas —
-was disabled because it roughly halves object scale, pushing 17 px heads below
-what the network can resolve, and because its memory cost was prohibitive.
-Horizontal flip and ±30% scaling were kept, both producing configurations that
-genuinely occur.
+Augmentations were chosen from the geometry of the problem rather than left at
+their defaults. Rotation, shear and perspective were disabled, since an elevated
+camera sees heads upright and these transforms teach poses that never occur.
+Mosaic, which tiles four images into one canvas, was disabled because it roughly
+halves object scale — with heads already at a median of 17 pixels, that pushes
+them below what the network can resolve — and because its memory cost was
+prohibitive. Horizontal flip and ±30% scaling were kept, both producing
+configurations that genuinely occur.
 
-**Detection cap.** Ultralytics caps predictions at 300 per image by default.
-Evaluation images contain up to 3,138 heads, so the default silently truncated
-predictions and produced what looked like a recall collapse but was a library
-setting. The cap was raised and the behaviour covered by a regression test.
+Ultralytics caps predictions at 300 per image by default. Evaluation images
+contain up to 3,138 heads, so the default silently truncated predictions and
+produced what looked like a recall collapse but was a library setting. The cap
+was raised and the behaviour covered by a regression test.
 
-**Scope of the learned component.** One network reads pixels; everything after
-it — ground-plane projection, density, crowd pressure, the warning rule — is
-deterministic. This was deliberate. An alarm prompts a human to act, and that
-human needs to see which measurement and which rule produced it. It also costs
-less data, since learning over a few physical quantities needs far less of it
-than learning the same relationships from raw pixels; §5 returns to this.
+The learned component is deliberately narrow: one network reads pixels, and
+everything after it — ground-plane projection, density, crowd pressure, the
+warning rule — is deterministic. An alarm prompts a human to act, and that human
+needs to see which measurement and which rule produced it. The arrangement also
+costs less data, since learning over a few physical quantities needs far less of
+it than learning the same relationships from raw pixels; §5 returns to this.
 
 ### The delivered model
 
@@ -230,7 +232,7 @@ this is the configuration behind every downstream result in the project.
 
 ## 4. Training, validation and testing
 
-**Hardware constraints shaped the configuration**, and the binding constraint
+Hardware constraints shaped the configuration, and the binding constraint
 was not the expected one: the GPU (6 GB) peaked at 2.4 GB, while **system RAM
 (7.6 GB) was the limit.** Dataloader workers were reduced to zero, since on
 Windows each worker is a separate process re-importing the CUDA runtime and even
@@ -238,14 +240,14 @@ two exhausted the commit limit. Batch size fell from 8 to 4 and finally 2 as
 instance counts rose, because label-assignment memory scales with objects per
 image rather than batch size alone.
 
-**Resolution was matched to each dataset's native scale.** SCUT-HEAD images are
+Resolution was matched to each dataset's native scale. SCUT-HEAD images are
 natively ~1,070 px wide, so `imgsz=1024` was used, where the originally planned
 1,280 would have upscaled without adding information. CroHD is 1920×1080 with
 heads at 26–34 px, so `imgsz=1280` kept heads at 17–23 px after downscaling,
 above the smallest size the network can resolve.
 
-**Three runs: the delivered model and two controls.** They differ principally in
-training data.
+Three runs were performed — the delivered model and two controls — differing
+principally in training data.
 
 | Run | Data | Images | Boxes | Epochs | imgsz | batch | Role |
 |---|---|---|---|---|---|---|---|
@@ -258,15 +260,15 @@ score is uninterpretable without them: "97.5% of people recovered" means nothing
 until it is set against what the obvious first choice of dataset produced on the
 same images.
 
-**The runs are not a clean ablation**, and the claim is framed accordingly:
+The runs are not a clean ablation, and the claim is framed accordingly:
 resolution and batch size also differ, for the reasons above. What *is*
 controlled is the evaluation — all three models tested on the same 482 images at
 the same resolution and detection cap. The confound also runs against the
 winner: Run 3 trained at 1280 but was evaluated at 1024, below its training
 resolution, and still led by 3.6×.
 
-**The split, stated explicitly**, because the three roles are easy to conflate
-and the distinction governs what each number can be claimed to show:
+The split is stated explicitly below, because the three roles are easy to
+conflate and the distinction governs what each number can be claimed to show:
 
 | Role | Data | Size | Purpose |
 |---|---|---|---|
@@ -279,23 +281,23 @@ retains whichever epoch scores best on it — so any figure computed there is a
 validation score and an upper bound. ShanghaiTech played no part in either
 fitting or selection, and is therefore the only genuine test.
 
-**Validation.** The delivered model reached mAP50 0.714, recall 0.674 and
+On validation, the delivered model reached mAP50 0.714, recall 0.674 and
 precision 0.763 on the held-out sequence — *lower* than Run 1's in-domain
 0.938, which is instructive rather than unfavourable: each model was scored
 against its own validation set, and CroHD's dense crowds of small heads are far
 harder than SCUT-HEAD's classroom photographs. **A validation score is only
 meaningful relative to the difficulty of the set that produced it.**
 
-**Why in-domain testing was abandoned.** Run 1 was also evaluated on
-SCUT-HEAD's *own test split*, where it returned a count ratio of approximately
-0.95 at every density. A conventional train/validation/test discipline,
-correctly executed, therefore reported success — because all three splits share
-one camera and one viewpoint, so the failure stayed invisible until the model
-met a different source. This is the project's strongest argument for
+In-domain testing was abandoned for a reason worth recording. Run 1 was also
+evaluated on SCUT-HEAD's *own test split*, where it returned a count ratio of
+approximately 0.95 at every density. A conventional train/validation/test
+discipline, correctly executed, therefore reported success — because all three
+splits share one camera and one viewpoint, so the failure stayed invisible until
+the model met a different source. This is the project's strongest argument for
 **cross-domain evaluation**, and it is an argument about methodology rather than
 about this particular model.
 
-**Testing** was consequently cross-domain and identical for all three models:
+Testing was consequently cross-domain and identical for all three models:
 482 ShanghaiTech images at confidence 0.25, `imgsz=1024`, detection cap 4,000.
 
 | heads/image | SCUT-HEAD A | SCUT-HEAD A+B | **CroHD (delivered)** |
@@ -309,10 +311,10 @@ The delivered model is the only one of the three ever usable; the controls never
 reach a count ratio of 0.8 at any density. The gap is attributable to the
 training distribution, since the evaluation was held constant.
 
-**Detection metrics.** Count ratio measures whether people were found, not
-whether boxes were placed well, so the three models were additionally scored on
-the held-out CroHD scene — same images, resolution and detection cap, at the
-deployed confidence of 0.25:
+Count ratio measures whether people were found, not whether boxes were placed
+well, so the three models were additionally scored with standard detection
+metrics on the held-out CroHD scene — same images, resolution and detection cap,
+at the deployed confidence of 0.25:
 
 | model | precision | recall | F1 | mAP50 | mAP50-95 |
 |---|---|---|---|---|---|
@@ -332,14 +334,14 @@ count ratio above as the unbiased three-way comparison; and accuracy is not
 reported, because object detection has no true-negative count and the quantity
 is undefined.
 
-**Metric choice.** Count ratio was used alongside mAP because density is a
-*count*: what matters is whether a person was found, not whether the box hugs
-them to the pixel, and mAP50-95 penalises imprecise corners heavily at 17 px
-object sizes. Its limitation is that a count cannot distinguish "found everyone"
-from "missed fifty and invented fifty".
+Count ratio was used alongside mAP because density is a *count*: what matters is
+whether a person was found, not whether the box hugs them to the pixel, and
+mAP50-95 penalises imprecise corners heavily at 17 px object sizes. Its
+limitation is that a count cannot distinguish "found everyone" from "missed
+fifty and invented fifty".
 
-**The usable ceiling is the project's defining limitation, and it is measured
-rather than assumed.** Counting is reliable to roughly 200 heads per frame, above
+The usable ceiling is the project's defining limitation, and it is measured
+rather than assumed. Counting is reliable to roughly 200 heads per frame, above
 which the ratio falls away to 0.204 in the densest images. The direction of the
 error is what makes this serious: because density is a count, missed detections
 produce a *lower* density reading rather than a conspicuous failure, so the
@@ -348,28 +350,28 @@ worst in precisely the regime the system exists to monitor, and any deployment
 must treat a measurement above the ceiling as unreliable rather than as a low
 number.
 
-**Validation of the measurement stack against ground truth.** Across four CroHD
+The measurement stack was validated against ground truth. Across four CroHD
 scenes — **three of them training scenes and one held out**, so this measures
 agreement with ground truth rather than generalisation — counting is biased low
 by a consistent **14% (sd 3.4 percentage points)**; a stable bias is
 correctable, an erratic one is not. The held-out scene scores 0.869, above the
 four-scene mean of 0.857, while the lowest ratio (0.799) belongs to a scene the
-model did train on, so scene difficulty dominates memorisation here. Track-derived
-speeds match ground-truth pedestrian speeds to within **2–5%** (correlation up
-to 0.996), and counting without tracking performs better still (0.977 ratio, 4%
-mean absolute error) — establishing that detection should be used for counting
-and tracking only for velocity, since the tracker discards detections it cannot
-associate. Four scenes establish that the bias is consistent, not that it is
-consistent everywhere.
+model did train on, so scene difficulty dominates memorisation here.
+Track-derived speeds match ground-truth pedestrian speeds to within **2–5%**
+(correlation up to 0.996), and counting without tracking performs better still
+(0.977 ratio, 4% mean absolute error) — establishing that detection should be
+used for counting and tracking only for velocity, since the tracker discards
+detections it cannot associate. Four scenes establish that the bias is
+consistent, not that it is consistent everywhere.
 
-**What could not be validated.** The detection and measurement layers were
-validated against ground truth, as above. **The warning layer could not be**,
-because no data contains the condition it is designed to recognise. Its
-thresholds are therefore inherited or derived per scene, rather than learned.
-The inherited ones are Fruin's level-of-service classes for **queuing** rather
-than walkway conditions, chosen because the escalation case is an accumulating,
-near-stationary crowd, and converted from ft² per person to people/m². They are
-adopted from secondary sources; the 1971 original has not been consulted.
+The detection and measurement layers were validated against ground truth, as
+above. **The warning layer could not be**, because no data contains the
+condition it is designed to recognise. Its thresholds are therefore inherited or
+derived per scene, rather than learned. The inherited ones are Fruin's
+level-of-service classes for **queuing** rather than walkway conditions, chosen
+because the escalation case is an accumulating, near-stationary crowd, and
+converted from ft² per person to people/m². They are adopted from secondary
+sources; the 1971 original has not been consulted.
 
 ---
 
@@ -379,19 +381,19 @@ The original plan was: fine-tune a head detector on SCUT-HEAD; film our own
 footage at a pedestrian bottleneck; calibrate with a homography from measured
 ground points; compute density in people/m²; and warn using Fruin thresholds.
 
-**What was followed.** The staged architecture, the head-detection approach, the
-homography-based calibration, the density and crowd-pressure formulation, and
-the two-signal warning rule were all implemented as planned and are tested. The
-separation of the learned component from the decision logic was maintained
+Much of that was followed. The staged architecture, the head-detection approach,
+the homography-based calibration, the density and crowd-pressure formulation,
+and the two-signal warning rule were all implemented as planned and are tested.
+The separation of the learned component from the decision logic was maintained
 throughout.
 
-**What changed, and why.** *Own footage was not obtained*: ethics approval for
-filming identifiable people carries a lead time the schedule could not absorb —
-a risk the plan had flagged from the outset — so public datasets were
-substituted. *Absolute density was dropped for the real-footage path*, because
-people/m² requires a surveyed camera; without one the system reports occupancy
-and dimensionless motion statistics against thresholds learned from each scene's
-own baseline. *Part B moved from held-out to training data*, as described in §2.
+Four things changed. *Own footage was not obtained*: ethics approval for filming
+identifiable people carries a lead time the schedule could not absorb — a risk
+the plan had flagged from the outset — so public datasets were substituted.
+*Absolute density was dropped for the real-footage path*, because people/m²
+requires a surveyed camera; without one the system reports occupancy and
+dimensionless motion statistics against thresholds learned from each scene's own
+baseline. *Part B moved from held-out to training data*, as described in §2.
 *The anomaly-detection evaluation on the UMN dataset was dropped*: the UMN
 anomaly is coordinated escape, which produces high speed but **low local
 velocity variance** — precisely the quantity the crowd-pressure measure is
@@ -422,9 +424,9 @@ and clear times are not arbitrary: without them the level oscillated nineteen
 times in eleven seconds, since occupancy sits on the threshold for extended
 periods.
 
-**ELEVATED is deliberately not called WARNING.** It is an anomaly signal,
-needing no survey and no literature, and correspondingly it cannot state that a
-crowd is approaching danger in absolute terms — only that this scene is behaving
+ELEVATED is deliberately not called WARNING. It is an anomaly signal, needing no
+survey and no literature, and correspondingly it cannot state that a crowd is
+approaching danger in absolute terms — only that this scene is behaving
 unusually. Its weakness is the learning window: on HT21-02 the baseline landed
 at 102 against a clip mean of 85, an unrepresentative quiet period setting the
 bar too high, which is part of why that sequence never escalated.
@@ -460,7 +462,7 @@ specified conditions, not on evidence about real disasters.
 
 ### What better data would enable
 
-**Surveyed calibration would make the learned component transferable**, the less
+Surveyed calibration would make the learned component transferable, the less
 obvious benefit and the more important one. Without it every quantity is in
 pixels, so every threshold belongs to one camera at one zoom and a model trained
 at one site is meaningless at another. With a homography, measurements become
@@ -468,7 +470,7 @@ physical — people/m², m/s — and mean the same thing everywhere, permitting
 pooling across cameras, applying published thresholds at all, and carrying
 validation between venues.
 
-**Incident data would let the thresholds be learned rather than inherited.** The
+Incident data would let the thresholds be learned rather than inherited. The
 realistic target is not crush footage but its neighbours: flow breakdown without
 casualties (common at festivals, stadium egress and transit hubs), near misses
 logged by venue operators, and instrumented experiments with consenting
@@ -491,10 +493,11 @@ own walking paces; scaling it across varied geometry, inflow and exit capacity
 would yield a labelled corpus at no ethical cost, with the caveat that a model
 trained on simulation learns the simulator's assumptions.
 
-**What more data would not solve:** label ambiguity (when a crush "begins" is
-contested, and labels placed at the moment of injury teach a model to fire too
-late); severe class imbalance, demanding precision-recall evaluation rather than
-accuracy; and the choice of operating point, which is a value judgement rather
-than a technical one. False negatives can kill, while false alarms erode the
-operator trust the system depends on. Characterising that trade-off is an
-engineering contribution; settling it belongs to venue operators and regulators.
+What more data would not solve is threefold: label ambiguity (when a crush
+"begins" is contested, and labels placed at the moment of injury teach a model to
+fire too late); severe class imbalance, demanding precision-recall evaluation
+rather than accuracy; and the choice of operating point, which is a value
+judgement rather than a technical one. False negatives can kill, while false
+alarms erode the operator trust the system depends on. Characterising that
+trade-off is an engineering contribution; settling it belongs to venue operators
+and regulators.
