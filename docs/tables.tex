@@ -1,0 +1,180 @@
+% ---------------------------------------------------------------------------
+% Tables from docs/methods_draft.md, in LaTeX.
+%
+% Preamble (add once to your document):
+%
+%   \usepackage{booktabs}
+%   \usepackage{tabularx}
+%   \newcolumntype{L}[1]{>{\raggedright\arraybackslash\hsize=#1\hsize}X}
+%
+% The L{w} widths are relative weights that must SUM TO the number of X
+% columns in that table (4 for a four-column table, and so on). Shift weight
+% between them if a column looks cramped; keep the total unchanged.
+%
+% Two-column (IEEE-style) documents: the wide tables here -- 1, 3 and 6 --
+% will be tight in one column. Use table* and \textwidth to span both.
+% ---------------------------------------------------------------------------
+
+
+% === 1. Dataset selection against requirements (Section 2) =================
+\begin{table}[t]
+  \centering
+  \caption{Candidate datasets against the requirements the system imposes.
+           Only CroHD satisfies all five.}
+  \label{tab:dataset-requirements}
+  \begin{tabularx}{\linewidth}{@{}L{0.80}L{1.40}L{0.95}L{0.85}@{}}
+    \toprule
+    \textbf{Requirement} & \textbf{Why it is necessary}
+      & \textbf{SCUT-HEAD} & \textbf{CroHD} \\
+    \midrule
+    Heads, not bodies
+      & bodies are occluded in dense crowds
+      & yes & yes \\
+    Camera above the crowd
+      & determines whether faces or backs of heads are seen
+      & partly --- elevated but front-facing
+      & \textbf{yes} \\
+    Genuinely dense scenes
+      & the regime of interest
+      & no --- tens per frame
+      & \textbf{yes --- hundreds} \\
+    Box annotations
+      & point labels cannot train a detector
+      & yes & \textbf{yes} \\
+    Video with identities
+      & required for velocity and crowd pressure
+      & no --- stills
+      & \textbf{yes} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+
+% === 2. Delivered model configuration (Section 3) ==========================
+\begin{table}[t]
+  \centering
+  \caption{Configuration of the delivered detector.}
+  \label{tab:delivered-model}
+  \begin{tabularx}{\linewidth}{@{}lX@{}}
+    \toprule
+    Initialisation & COCO-pretrained YOLOv8n \\
+    Training data  & CroHD, 1{,}187 images, 253{,}376 head boxes \\
+    Classes        & 1 (\texttt{head}) \\
+    Resolution     & 1280 \\
+    Epochs         & 10, batch 2 \\
+    Augmentation   & horizontal flip, $\pm$30\% scale; mosaic, rotation, shear
+                     and perspective disabled \\
+    Parameters     & 3{,}138{,}003 \\
+    Inference      & 30.8\,ms/frame at \texttt{imgsz=1280} (RTX 3050 6\,GB),
+                     against 143.4\,ms on CPU \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+
+% === 3. The train / validation / test split (Section 4) ====================
+\begin{table}[t]
+  \centering
+  \caption{The three data roles. Only ShanghaiTech played no part in either
+           fitting or model selection, so only it is a genuine test set.}
+  \label{tab:split}
+  \begin{tabularx}{\linewidth}{@{}L{0.60}L{0.95}L{1.20}L{1.25}@{}}
+    \toprule
+    \textbf{Role} & \textbf{Data} & \textbf{Size} & \textbf{Purpose} \\
+    \midrule
+    Train
+      & HT21-01, 02, 03
+      & 1{,}187 images / 253{,}376 boxes
+      & fits the weights \\
+    Validation
+      & HT21-04 (whole scene)
+      & 100 images / 17{,}665 boxes
+      & \textbf{selects the retained checkpoint} \\
+    \textbf{Test}
+      & \textbf{ShanghaiTech Part A}
+      & \textbf{482 images / 241{,}275 points}
+      & \textbf{independent evaluation} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+
+% === 4. Cross-domain count ratio (Section 4) ===============================
+\begin{table}[t]
+  \centering
+  \caption{Count ratio on 482 ShanghaiTech images, by crowd density. All three
+           models scored identically at confidence 0.25, \texttt{imgsz=1024},
+           detection cap 4{,}000.}
+  \label{tab:count-ratio}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    \textbf{heads/image} & \textbf{SCUT-HEAD A} & \textbf{SCUT-HEAD A+B}
+      & \textbf{CroHD (delivered)} \\
+    \midrule
+    100--200  & 0.269 & 0.421 & \textbf{0.975} \\
+    200--400  & 0.180 & 0.288 & \textbf{0.740} \\
+    1200+     & 0.012 & 0.024 & \textbf{0.204} \\
+    \midrule
+    usable ceiling (ratio $\geq$ 0.8) & never & never
+      & \textbf{200 heads/image} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+% === 5. Standard detection metrics (Section 4) =============================
+\begin{table}[t]
+  \centering
+  \caption{Detection metrics on the held-out CroHD scene at the deployed
+           confidence of 0.25. HT21-04 is the delivered model's validation
+           scene, so its row is an upper bound; for the two controls these
+           images are unseen.}
+  \label{tab:detection-metrics}
+  \begin{tabular}{@{}lrrrrr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}
+      & \textbf{mAP50} & \textbf{mAP50-95} \\
+    \midrule
+    SCUT-HEAD A    & 0.314 & 0.065 & 0.107 & 0.028 & 0.006 \\
+    SCUT-HEAD A+B  & 0.535 & 0.328 & 0.406 & 0.213 & 0.041 \\
+    \textbf{CroHD (delivered)}
+      & \textbf{0.747} & \textbf{0.696} & \textbf{0.720}
+      & \textbf{0.631} & \textbf{0.202} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+% === 6. The two decision rules (Section 5) =================================
+\begin{table}[t]
+  \centering
+  \caption{The two decision rules. They use different level vocabularies
+           because they make different claims: one is absolute, the other is
+           relative to the scene it is watching.}
+  \label{tab:decision-rules}
+  \begin{tabularx}{\linewidth}{@{}L{0.65}L{1.20}L{1.15}@{}}
+    \toprule
+      & \textbf{calibrated rule} & \textbf{scene-relative rule} \\
+    \midrule
+    Implemented in
+      & \texttt{src/cdw/warning.py}
+      & \texttt{scripts/demo\_uncalibrated.py} \\
+    Levels
+      & NORMAL / WATCH / \textbf{WARNING}
+      & LEARNING / WATCH / \textbf{ELEVATED} \\
+    Signals
+      & density in a crowded Fruin band \textbf{and} crowd pressure rising
+      & occupancy above this scene's own normal \textbf{and} net inflow
+        positive \\
+    Units
+      & people/m\textsuperscript{2} --- absolute
+      & people --- relative to this camera \\
+    Thresholds from
+      & cited literature (Fruin) plus a swept parameter
+      & the footage itself \\
+    Claims
+      & conditions resemble values documented before past flow breakdowns
+      & conditions are unusual \textbf{for this camera} \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
