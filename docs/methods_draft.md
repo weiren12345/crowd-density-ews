@@ -115,24 +115,21 @@ and shapes every section that follows.
 The strategy changed twice, each time in response to measurement rather than
 preference, and converged on CroHD.
 
-**The initial choice and its failure.** SCUT-HEAD Part A was selected because it
-is head-annotated (bodies are occluded in dense crowds, heads are not),
-elevated, and already in YOLO format. A detector trained on it reached mAP50
-0.938 on its own validation split but recovered only 27% of people on
-ShanghaiTech. Inspecting *which* detections were missed — rather than the
-aggregate score — showed that almost every successful detection was a
-forward-facing person and virtually every back-of-head was missed. SCUT-HEAD's
-camera sits at the front of a classroom facing the students, so the model had
-learned **faces from an elevated-front angle, not heads from any angle**, while
-a camera above a pedestrian bottleneck sees mostly backs and tops of heads.
+**The initial choice and its failure.** SCUT-HEAD Part A was selected for being
+head-annotated, elevated, and already in YOLO format. A detector trained on it
+reached mAP50 0.938 on its own validation split and recovered 27% of people on
+ShanghaiTech. Inspecting *which* detections were missed showed why: almost every
+success was a forward-facing person, almost every back-of-head a miss.
+SCUT-HEAD's camera faces the students from the front of a classroom, so the
+model had learned **faces from an elevated-front angle, not heads from any
+angle**, where a camera above a bottleneck sees mostly backs and tops.
 
-**An intermediate step that confirmed the diagnosis.** Part B — internet-sourced
-and viewpoint-diverse — was added to training, reversing the original plan that
-had reserved it as a held-out domain; ShanghaiTech had meanwhile become the
-better held-out domain, being a genuinely different source never trained on.
-Recall roughly doubled at every density. That it improved established viewpoint
-diversity as the operative variable; that it remained unusable established that
-classroom photography could not supply enough of it.
+**Part B confirmed the diagnosis.** Adding it — internet-sourced and
+viewpoint-diverse — roughly doubled recall at every density, which identified
+viewpoint as the operative variable; that it remained unusable showed classroom
+photography could not supply enough of it. This reversed the plan that had
+reserved Part B as a held-out domain, ShanghaiTech having meanwhile become the
+better one.
 
 **The dataset that worked: CroHD.** Selection was made against the failure
 diagnosis rather than by convenience, requirement by requirement:
