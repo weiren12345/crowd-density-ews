@@ -321,17 +321,17 @@ benign (§1).
 
 ### Two decision rules, and where their thresholds come from
 
-The absence of calibration forced two decision rules rather than one. They make
-different claims and use **different level vocabularies**:
-
-| | calibrated rule | scene-relative rule |
-|---|---|---|
-| Implemented in | `src/cdw/warning.py` | `scripts/demo_uncalibrated.py` |
-| Levels | NORMAL / WATCH / **WARNING** | LEARNING / WATCH / **ELEVATED** |
-| Signals | density in a crowded Fruin band **and** crowd pressure rising | occupancy above this scene's own normal **and** net inflow positive |
-| Units | people/m² — absolute | people — relative to this camera |
-| Thresholds from | cited literature (Fruin) plus a swept parameter | the footage itself |
-| Claims | conditions resemble values documented before past flow breakdowns | conditions are unusual **for this camera** |
+The absence of calibration forced two decision rules rather than one, with
+separate level vocabularies because they make different claims. The calibrated
+rule, in `src/cdw/warning.py`, measures in people/m² and escalates NORMAL to
+WATCH to **WARNING** when density sits in a crowded Fruin band and crowd
+pressure is rising; its thresholds come from cited literature plus one swept
+parameter, and its claim is absolute — that conditions resemble values
+documented before past flow breakdowns. The scene-relative rule, in
+`scripts/demo_uncalibrated.py`, measures in people and escalates LEARNING to
+WATCH to **ELEVATED** when occupancy rises above this scene's own normal and
+net inflow is positive; its thresholds come from the footage itself, and its
+claim is correspondingly weaker — that conditions are unusual for this camera.
 
 The scene-relative threshold is computed rather than chosen: the system records
 occupancy over an initial learning period and takes a high percentile of it.
