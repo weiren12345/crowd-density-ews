@@ -31,6 +31,37 @@ level-of-service band **and** crowd pressure rising, sustained for a dwell
 time. Either alone is a poor indicator — a packed but calm platform is not
 dangerous, and a pressure blip in a sparse crowd is noise.
 
+### Two decision paths, and what is learned where
+
+The diagram above is the **calibrated** path, and it needs a surveyed
+homography to turn pixels into metres. No public footage of dense crowds comes
+with one, so there is a second path that needs no survey:
+
+| | calibrated path | scene-relative path |
+|---|---|---|
+| Units | people/m² | people counted in the region |
+| Escalates when | density in a crowded Fruin band **and** pressure rising | occupancy above this scene's own normal **and** the region filling |
+| Levels | `NORMAL → WATCH → WARNING` | `LEARNING → WATCH → ELEVATED` |
+| Thresholds from | published Fruin bands | the clip's own first 15 seconds |
+| Claims | conditions resemble values documented before past flow breakdowns | conditions are unusual **for this camera** |
+| Demonstrated on | the fabricated clip | the real CroHD footage |
+
+**Only one component is trained, and it is not the baseline.** The detector is
+a YOLOv8n fine-tuned offline on 1,187 CroHD images; it ships as `best.pt`, and
+it is the part that transfers to a new camera. The scene baseline is not a
+model at all — it is the **85th percentile** of occupancy over the clip's first
+15 seconds, recomputed from scratch for every video and meaningless on any
+other camera. That is exactly why the scene-relative path can report "unusual
+here" and cannot report "dangerous".
+
+A percentile rather than a mean, because occupancy sits above its own mean
+roughly half the time and the level would fire constantly. And occupancy alone
+never escalates: it has to arrive with a net inflow above 0.3 people/s, so a
+packed but stable crowd stays normal while a filling one does not. Two further
+parameters stop the level flapping, a 2 s dwell before escalating and a 3 s
+clear before standing down — without them it flapped nineteen times in eleven
+seconds.
+
 ## Headline results
 
 Every number below has a producing script and a caveat recorded in
@@ -78,6 +109,11 @@ calibration.
 At escalation, inflow is nearly double outflow — the region is filling. At
 de-escalation the two have converged. The flow-balance diagnostic is doing the
 work, with no calibration and no borrowed thresholds.
+
+HT21-03 is a detector **training** scene, so this shows the occupancy,
+flow-balance and escalation logic working on real crowd video — none of which
+was fitted to it — not that the detector generalises. That claim rests on the
+ShanghaiTech evaluation above, on images the model never saw.
 
 **And three things it cannot do**, reported rather than buried:
 
