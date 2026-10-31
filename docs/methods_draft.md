@@ -244,13 +244,17 @@ each number can be claimed to show:
 |---|---|---|---|
 | Train | HT21-01, 02, 03 | 1,187 images / 253,376 boxes | fits the weights |
 | Validation | HT21-04 (whole scene) | 100 images / 17,665 boxes | **selects the retained checkpoint** |
-| **Test** | **ShanghaiTech Part A** | **482 images / 241,275 points** | **independent evaluation** |
+| **Test** | **ShanghaiTech Part A** | **482 images / 241,275 points** | **independent evaluation of the detector** |
 
 The split is scene-level, for the reason given in §1. HT21-04 is held out from
 training but not from model selection — the framework keeps whichever epoch
 scores best on it — so any figure from it is an upper bound, not an independent
 result. ShanghaiTech played no part in fitting or selection, and is the only
-genuine test.
+genuine test — of the detector. It bounds how well head counting survives a
+change of source, and nothing beyond that: being still photographs, it cannot
+exercise tracking, flow or the warning layer, all of which need consecutive
+frames. Those are demonstrated on video instead, and a demonstration is not a
+test.
 
 Testing was cross-domain rather than in-domain, because in-domain testing had
 already been shown to be uninformative here: the SCUT-HEAD Part A control
@@ -276,7 +280,8 @@ fifty and invented fifty". Accuracy is not reported at all, because object
 detection has no true-negative count and the quantity is undefined.
 
 The warning layer could not be validated, because no data contains the condition
-it is designed to recognise. Its thresholds are inherited or derived per scene:
+it is designed to recognise; §5 describes the demonstrations that stand in its
+place. Its thresholds are inherited or derived per scene:
 the inherited ones are Fruin's **queuing** classes, chosen over his walkway
 classes because the escalation case is an accumulating, near-stationary crowd,
 and adopted from secondary sources.
