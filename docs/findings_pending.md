@@ -126,3 +126,78 @@ because they describe the training setup rather than a finding. They are in
   epochs, batch 4);
 - GPU headroom during training (2.4 GB of 6 GB). The binding constraint it
   illustrated — system RAM at 7.6 GB — is kept in Methods §4.
+
+---
+
+# Moved out of Methods §5
+
+The same treatment, applied to the work-plan section. Methods §5 now describes
+what the two decision rules *are* and why there are two of them; what they
+actually did on footage is below.
+
+## 7. The scene-relative threshold, as measured
+
+Methods §5 says the threshold is computed from a high percentile of an initial
+learning period, and names the five parameters that produce it. The values:
+
+- On **HT21-03** the learning period produced a threshold of **101 people**,
+  from the **85th percentile of the first 15 s**. ELEVATED then required
+  occupancy above 101 **and** a net rate above **0.3 people/s**, sustained for
+  **2 s**, with a **3 s** clear time.
+- The dwell and clear times are not arbitrary. Without them the level
+  **oscillated nineteen times in eleven seconds**, because occupancy sits on
+  the threshold for extended periods. This is the evidence for the hysteresis,
+  and it is worth reporting as a result rather than asserting as a design note.
+- The learning window's weakness is measured, not hypothesised. On **HT21-02**
+  the baseline landed at **102** against a clip mean of **85** — an
+  unrepresentative quiet period set the bar too high, which is part of why that
+  sequence never escalated. A longer or explicitly quiet learning period would
+  be more robust.
+
+## 8. Demonstration on real footage (scene-relative rule)
+
+CroHD sequence **HT21-03**, a street crossing where pedestrians accumulate at a
+signal and discharge. The complete pipeline escalated:
+
+| event | time |
+|---|---|
+| NORMAL → WATCH | **15.1 s** |
+| WATCH → ELEVATED | **17.1 s** |
+| stood down | **29.8 s** |
+
+The flow measurements show why: inflow of **16.2 people/s** against outflow of
+**9.2** at escalation, converging to **14.6** against **12.4** at stand-down.
+
+This uses the trained model, real detections and real tracking, with no
+calibration and no borrowed thresholds.
+
+**Carry the qualification from Methods §5**: HT21-03 is a detector *training*
+scene. The demonstration establishes that the occupancy, flow-balance and
+escalation logic behave correctly on real crowd video — none of which was
+fitted to this scene — not that the detector generalises.
+
+## 9. Demonstration on the fabricated scenario (calibrated rule)
+
+A synthetic clip with **declared** geometry: a **6.0 × 5.0 m** region, recovered
+exactly by the homography, in which a bottleneck fills faster than it empties.
+Watermarked on every frame; geometry asserted rather than surveyed; detection
+replayed from ground truth.
+
+On it the calibrated pipeline reports density in people/m², applies the Fruin
+bands, escalates to **WARNING at 27.7 s**, and de-escalates at **53.1 s** when
+the crowd — still at **level-of-service E** — stops deteriorating.
+
+## 10. What the pair supports (analysis)
+
+The real demonstration establishes that the measurement and decision stack
+functions on genuine crowds. The fabricated scenario establishes what the same
+system reports when calibration is available and conditions deteriorate.
+
+Together they support the claim that **given surveyed footage of a deteriorating
+crowd, the system would produce the calibrated output shown in the scenario** —
+while making clear that this rests on demonstrated behaviour under specified
+conditions, not on evidence about real disasters.
+
+This is the strongest claim the project can make, and the sentence above is
+deliberately constructed to not exceed it. Do not let it drift into "the system
+detects crowd crushes".

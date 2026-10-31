@@ -287,7 +287,7 @@ and adopted from secondary sources.
 
 The original plan was: fine-tune a head detector on SCUT-HEAD; film our own
 footage at a pedestrian bottleneck; calibrate with a homography from measured
-ground points; compute density in people/m²; and warn using Fruin thresholds.
+ground points; compute density in people/m2; and warn using Fruin thresholds.
 
 Much of that was followed. The staged architecture, the head-detection approach,
 the homography-based calibration, the density and crowd-pressure formulation,
@@ -296,16 +296,16 @@ The separation of the learned component from the decision logic was maintained
 throughout.
 
 Four things changed. *Own footage was not obtained*: ethics approval for filming
-identifiable people carries a lead time the schedule could not absorb — a risk
-the plan had flagged from the outset — so public datasets were substituted.
-*Absolute density was dropped for the real-footage path*, because people/m²
+identifiable people carries a lead time the schedule could not absorb - a risk
+the plan had flagged from the outset - so public datasets were substituted.
+*Absolute density was dropped for the real-footage path*, because people/m2
 requires a surveyed camera; without one the system reports occupancy and
 dimensionless motion statistics against thresholds learned from each scene's own
-baseline. *Part B moved from held-out to training data*, as described in §2.
+baseline. *Part B moved from held-out to training data*, as described in S2.
 *The anomaly-detection evaluation on the UMN dataset was dropped*: the UMN
 anomaly is coordinated escape, which produces high speed but **low local
-velocity variance** — precisely the quantity the crowd-pressure measure is
-designed to score as benign — so it would have measured the wrong thing.
+velocity variance** - precisely the quantity the crowd-pressure measure is
+designed to score as benign - so it would have measured the wrong thing.
 
 ### Two decision rules, and where their thresholds come from
 
@@ -317,95 +317,36 @@ different claims and use **different level vocabularies**:
 | Implemented in | `src/cdw/warning.py` | `scripts/demo_uncalibrated.py` |
 | Levels | NORMAL / WATCH / **WARNING** | LEARNING / WATCH / **ELEVATED** |
 | Signals | density in a crowded Fruin band **and** crowd pressure rising | occupancy above this scene's own normal **and** net inflow positive |
-| Units | people/m² — absolute | people — relative to this camera |
+| Units | people/m2 - absolute | people - relative to this camera |
 | Thresholds from | cited literature (Fruin) plus a swept parameter | the footage itself |
 | Claims | conditions resemble values documented before past flow breakdowns | conditions are unusual **for this camera** |
 
-The scene-relative threshold is computed, not chosen: the system records
-occupancy over an initial learning period and takes a high percentile of it. On
-HT21-03 that produced a threshold of **101 people**, from the 85th percentile of
-the first 15 s; ELEVATED then requires occupancy above 101 **and** a net rate
-above 0.3 people/s, sustained for 2 s. What is chosen rather than derived are
-the five parameters producing it — the 85th percentile, the 15 s learning
-window, the 0.3 people/s rate, and the 2 s dwell and 3 s clear times. The dwell
-and clear times are not arbitrary: without them the level oscillated nineteen
-times in eleven seconds, since occupancy sits on the threshold for extended
-periods.
+The scene-relative threshold is computed rather than chosen: the system records
+occupancy over an initial learning period and takes a high percentile of it.
+What is chosen are the five parameters that produce it - the percentile, the
+length of the learning window, the net-rate threshold, and the dwell and clear
+times. The dwell and clear times are not arbitrary; without them the level flaps,
+because occupancy sits on the threshold for extended periods.
 
 ELEVATED is deliberately not called WARNING. It is an anomaly signal, needing no
 survey and no literature, and correspondingly it cannot state that a crowd is
-approaching danger in absolute terms — only that this scene is behaving
-unusually. Its weakness is the learning window: on HT21-02 the baseline landed
-at 102 against a clip mean of 85, an unrepresentative quiet period setting the
-bar too high, which is part of why that sequence never escalated.
+approaching danger in absolute terms - only that this scene is behaving
+unusually. Its known weakness is the learning window, which assumes the opening
+period is representative of the scene.
 
-Because no real footage is both calibrated and deteriorating, each rule was
-demonstrated separately.
+Because no real footage is both calibrated and deteriorating, the two rules were
+demonstrated separately. The scene-relative rule was run on CroHD footage using
+the trained detector, real detections and real tracking, with no calibration and
+no borrowed thresholds. The calibrated rule was run on a synthetic clip whose
+geometry is declared rather than surveyed and which is watermarked on every
+frame, with detection replayed from ground truth since the trained detector does
+not respond to synthetic imagery. One qualification carries into the reading of
+the first: its sequence is a detector **training** scene, so it establishes that
+the occupancy, flow-balance and escalation logic behave correctly on real crowd
+video, not that the detector generalises, which is evidenced separately in S4.
+What each demonstration produced is reported in the findings section.
 
-*Real footage.* On CroHD sequence HT21-03 — a street crossing where pedestrians
-accumulate at a signal and discharge — the complete pipeline escalated from
-NORMAL to WATCH at 15.1 s and to ELEVATED at 17.1 s, then stood down at 29.8 s.
-The flow measurements show why: inflow of 16.2 people/s against outflow of 9.2
-at escalation, converging to 14.6 against 12.4 at stand-down. This uses the
-trained model, real detections and real tracking, with no calibration and no
-borrowed thresholds. One qualification: HT21-03 is a detector **training**
-scene, so what the demonstration establishes is that the occupancy, flow-balance
-and escalation logic behave correctly on real crowd video — none of which was
-fitted to this scene — not that the detector generalises, which is evidenced
-separately and on different data in §4.
-
-*Fabricated scenario.* A synthetic scenario with **declared** geometry (a
-6.0 × 5.0 m region, recovered exactly by the homography) in which a bottleneck
-fills faster than it empties. The clip is watermarked on every frame and the
-geometry is asserted rather than surveyed. On it the calibrated pipeline reports
-density in people/m², applies the Fruin bands, escalates to WARNING at 27.7 s,
-and de-escalates at 53.1 s when the crowd — still at level-of-service E — stops
-deteriorating. Detection is replayed from ground truth, since the trained
-detector does not respond to synthetic imagery.
-
-Together the pair supports the claim that **given surveyed footage of a
-deteriorating crowd, the system would produce the calibrated output shown in the
-scenario** — while making clear that this rests on demonstrated behaviour under
-specified conditions, not on evidence about real disasters.
-
-### What better data would enable
-
-Surveyed calibration would make the learned component transferable, the less
-obvious benefit and the more important one. Without it every quantity is in
-pixels, so every threshold belongs to one camera at one zoom and a model trained
-at one site is meaningless at another. With a homography, measurements become
-physical — people/m², m/s — and mean the same thing everywhere, permitting
-pooling across cameras, applying published thresholds at all, and carrying
-validation between venues.
-
-Incident data would let the thresholds be learned rather than inherited. The
-realistic target is not crush footage but its neighbours: flow breakdown without
-casualties (common at festivals, stadium egress and transit hubs), near misses
-logged by venue operators, and instrumented experiments with consenting
-volunteers at controlled densities.
-
-Of three routes for using such data, *end-to-end video classification* is **not
-recommended**: it requires hundreds of labelled events that do not exist and
-produces an unauditable score, and for a system whose output prompts an
-evacuation decision, "the network returned 0.87" is not a justification an
-inquiry would accept. *A learned decision boundary over the existing physical
-features* is the recommended route, and it is why the learned component was kept
-small: retaining density, speed, local velocity variance, crowd pressure and the
-inflow/outflow balance as inputs, a modest classifier — logistic regression or
-gradient-boosted trees — would replace the hand-set thresholds, needing tens of
-breakdown episodes rather than thousands because the features already encode the
-physics, and remaining inspectable in a way a video network is not.
-*Physics-informed training from simulation* is a third route already begun, the
-scenario generator coupling speed to local density and giving individuals their
-own walking paces; scaling it across varied geometry, inflow and exit capacity
-would yield a labelled corpus at no ethical cost, with the caveat that a model
-trained on simulation learns the simulator's assumptions.
-
-What more data would not solve is threefold: label ambiguity (when a crush
-"begins" is contested, and labels placed at the moment of injury teach a model to
-fire too late); severe class imbalance, demanding precision-recall evaluation
-rather than accuracy; and the choice of operating point, which is a value
-judgement rather than a technical one. False negatives can kill, while false
-alarms erode the operator trust the system depends on. Characterising that
-trade-off is an engineering contribution; settling it belongs to venue operators
-and regulators.
+> Recommendations - what surveyed calibration and incident data would enable,
+> and the three candidate routes for training on them - are set out in
+> `docs/future_work.md`. They were cut from here because this section is about
+> the work plan, and because that document covers them far more fully.
